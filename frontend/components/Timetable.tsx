@@ -14,11 +14,9 @@ import {
   Download, 
   Printer, 
   Sparkles,
-  Coffee,
-  Lock,
-  ShieldCheck
+  Coffee
 } from 'lucide-react';
-import { TimetableSlot, LabMaintenanceTicket, AuthorizedUser } from '../types';
+import { TimetableSlot, LabMaintenanceTicket } from '../types';
 import { SCHOOL_CLASS_GROUPS, getSubjectByClass } from '../data/classes';
 import { DAILY_PERIOD_SCHEDULE } from '../data/scheduleSlots';
 import { initialLabTickets } from '../data/initialData';
@@ -26,10 +24,9 @@ import { initialLabTickets } from '../data/initialData';
 interface TimetableProps {
   slots: TimetableSlot[];
   onAddSlot: (slot: TimetableSlot) => void;
-  currentUser: AuthorizedUser;
 }
 
-export const Timetable: React.FC<TimetableProps> = ({ slots, onAddSlot, currentUser }) => {
+export const Timetable: React.FC<TimetableProps> = ({ slots, onAddSlot }) => {
   const [activeTab, setActiveTab] = useState<'timetable' | 'maintenance'>('timetable');
   const [filterLocation, setFilterLocation] = useState<string>('all');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -58,12 +55,10 @@ export const Timetable: React.FC<TimetableProps> = ({ slots, onAddSlot, currentU
   const [tktFaultType, setTktFaultType] = useState<LabMaintenanceTicket['faultType']>('硬件损坏');
   const [tktPriority, setTktPriority] = useState<LabMaintenanceTicket['priority']>('普通');
   const [tktDesc, setTktDesc] = useState('');
+  const [tktReporter, setTktReporter] = useState('黄世泓 (IT老师 / 资讯处助理)');
 
   // 打印/导出维修汇总报告模态框
   const [showReportModal, setShowReportModal] = useState(false);
-
-  // 权限检查：当前用户是否有权查看 lab_maintenance 报表
-  const canViewMaintenanceReport = currentUser.allowedReports.includes('lab_maintenance') || currentUser.isSuperAdmin;
 
   const days = [
     { day: 1, label: '周一', full: '星期一' },
@@ -116,7 +111,7 @@ export const Timetable: React.FC<TimetableProps> = ({ slots, onAddSlot, currentU
       stationNumber: tktStation.trim(),
       faultType: tktFaultType,
       priority: tktPriority,
-      reportedBy: `${currentUser.name} (${currentUser.title})`,
+      reportedBy: tktReporter,
       reportedAt: new Intl.DateTimeFormat('zh-CN', {
         year: 'numeric',
         month: '2-digit',
@@ -389,7 +384,7 @@ export const Timetable: React.FC<TimetableProps> = ({ slots, onAddSlot, currentU
         </div>
       )}
 
-      {/* 选项卡 2：电脑室设备故障维修表格与报告生成（严格根据 currentUser.allowedReports 过滤） */}
+      {/* 选项卡 2：电脑室设备故障维修表格与报告生成 */}
       {activeTab === 'maintenance' && (
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
@@ -404,21 +399,13 @@ export const Timetable: React.FC<TimetableProps> = ({ slots, onAddSlot, currentU
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
-              {/* 仅在具有 lab_maintenance 报表权限时允许生成报告 */}
-              {canViewMaintenanceReport ? (
-                <button
-                  onClick={() => setShowReportModal(true)}
-                  className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold shadow-sm transition"
-                >
-                  <FileText className="h-4 w-4" />
-                  <span>生成电脑室维修报告</span>
-                </button>
-              ) : (
-                <div className="px-3 py-1.5 rounded-xl bg-slate-100 text-slate-400 text-xs flex items-center gap-1">
-                  <Lock className="h-3.5 w-3.5" />
-                  <span>无维修报告查看权限 (需 allowedReports: lab_maintenance)</span>
-                </div>
-              )}
+              <button
+                onClick={() => setShowReportModal(true)}
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold shadow-sm transition"
+              >
+                <FileText className="h-4 w-4" />
+                <span>生成电脑室维修报告</span>
+              </button>
 
               <button
                 onClick={() => setShowAddTicketModal(true)}
@@ -594,12 +581,15 @@ export const Timetable: React.FC<TimetableProps> = ({ slots, onAddSlot, currentU
 
               <div>
                 <label className="block text-xs font-medium text-slate-600 mb-1">任课 / 维护负责人</label>
-                <input
-                  type="text"
+                <select
                   value={teacherName}
                   onChange={(e) => setTeacherName(e.target.value)}
-                  className="w-full text-xs p-2.5 border rounded-lg outline-none bg-slate-50 font-medium"
-                />
+                  className="w-full text-xs p-2.5 border rounded-lg outline-none bg-white font-medium"
+                >
+                  <option value="黄世泓 (IT老师 / 资讯处助理)">黄世泓 (IT老师 / 资讯处助理)</option>
+                  <option value="林慈贤 (IT老师 / 资讯处助理)">林慈贤 (IT老师 / 资讯处助理)</option>
+                  <option value="黄世泓、林慈贤">黄世泓、林慈贤 (资讯处联合)</option>
+                </select>
               </div>
 
               <div className="flex justify-end gap-2 pt-2">
@@ -697,6 +687,16 @@ export const Timetable: React.FC<TimetableProps> = ({ slots, onAddSlot, currentU
                 />
               </div>
 
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">报修登记人</label>
+                <input
+                  type="text"
+                  value={tktReporter}
+                  onChange={(e) => setTktReporter(e.target.value)}
+                  className="w-full text-xs p-2.5 border rounded-lg outline-none bg-slate-50 font-medium"
+                />
+              </div>
+
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
@@ -717,8 +717,8 @@ export const Timetable: React.FC<TimetableProps> = ({ slots, onAddSlot, currentU
         </div>
       )}
 
-      {/* 模态框 3：生成并打印电脑室维修报告（受控于 canViewMaintenanceReport） */}
-      {showReportModal && canViewMaintenanceReport && (
+      {/* 模态框 3：生成并打印电脑室维修报告 */}
+      {showReportModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-6">
           <div className="bg-white rounded-2xl w-full max-w-4xl shadow-2xl max-h-[92vh] flex flex-col overflow-hidden">
             <div className="p-4 bg-slate-900 text-white flex items-center justify-between shrink-0">
