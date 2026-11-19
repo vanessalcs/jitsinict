@@ -1,22 +1,15 @@
 import React from 'react';
-import { Sparkles, Calendar, School, Shield, User, Menu, Database, Users, LogOut } from 'lucide-react';
-import { AuthorizedUser } from '../types';
+import { Sparkles, Calendar, School, Shield, User, Menu, Database, Users } from 'lucide-react';
+import { TeacherUser } from '../types';
 
 interface HeaderProps {
-  currentUser: AuthorizedUser;
+  currentUser: TeacherUser;
   onOpenAi: () => void;
   onOpenMenu: () => void;
-  onOpenGoogleSignIn: () => void;
-  onSignOut?: () => void;
+  onOpenUserModal: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ 
-  currentUser, 
-  onOpenAi, 
-  onOpenMenu, 
-  onOpenGoogleSignIn,
-  onSignOut
-}) => {
+export const Header: React.FC<HeaderProps> = ({ currentUser, onOpenAi, onOpenMenu, onOpenUserModal }) => {
   const now = new Date();
   const weekdayNames = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
   const formattedDate = `${now.getMonth() + 1}月${now.getDate()}日 ${weekdayNames[now.getDay()]}`;
@@ -40,9 +33,9 @@ export const Header: React.FC<HeaderProps> = ({
           <span className="bg-sky-50 text-sky-700 font-medium px-2 py-0.5 rounded-full text-xs hidden md:inline">
             资讯处 / 电脑科
           </span>
-          <div className="hidden xl:flex items-center gap-1 text-[11px] text-slate-400 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-full font-mono">
+          <div className="hidden xl:flex items-center gap-1 text-[11px] text-slate-400 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-full">
             <Database className="h-3 w-3 text-emerald-500" />
-            <span>10-Member Portal 授权生效</span>
+            <span>机房管理与教研系统在线</span>
           </div>
         </div>
       </div>
@@ -58,34 +51,24 @@ export const Header: React.FC<HeaderProps> = ({
           <span className="xs:hidden">AI</span>
         </button>
 
-        {/* 教师身份信息显示 */}
-        <div className="flex items-center gap-2 sm:pl-3 sm:border-l sm:border-slate-200">
+        {/* 用户切换入口 */}
+        <button
+          onClick={onOpenUserModal}
+          className="flex items-center gap-2 sm:pl-3 sm:border-l sm:border-slate-200 hover:opacity-85 transition text-left"
+        >
           <div className={`h-8 w-8 rounded-full bg-gradient-to-tr ${currentUser.avatarColor} flex items-center justify-center text-white text-xs font-bold shadow-sm shrink-0`}>
             {currentUser.name.slice(0, 1)}
           </div>
           <div className="hidden sm:block text-left">
             <div className="text-xs font-bold text-slate-800 leading-tight flex items-center gap-1">
               <span>{currentUser.name}</span>
-              <span className="text-[10px] text-sky-700 bg-sky-100 px-1.5 py-0.2 rounded font-normal">
-                {currentUser.isSuperAdmin ? 'Admin' : 'Staff'}
-              </span>
+              <span className="text-[10px] text-sky-600 bg-sky-50 px-1 rounded">切换</span>
             </div>
-            <div className="text-[11px] text-slate-400 truncate max-w-[140px] font-mono">
-              {currentUser.email}
+            <div className="text-[11px] text-slate-400 truncate max-w-[140px]">
+              IT老师 / 资讯处助理
             </div>
           </div>
-        </div>
-
-        {/* 退出登录按钮 */}
-        {onSignOut && (
-          <button
-            onClick={onSignOut}
-            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
-            title="退出登录 (Sign Out)"
-          >
-            <LogOut className="h-4 w-4" />
-          </button>
-        )}
+        </button>
       </div>
     </header>
   );
