@@ -11,17 +11,15 @@ import {
   BookOpenCheck,
   X,
   Users,
-  Monitor,
-  ShieldCheck,
-  LogIn
+  Monitor
 } from 'lucide-react';
-import { AuthorizedUser } from '../types';
+import { TeacherUser } from '../types';
 
 interface SidebarProps {
   currentTab: string;
   onTabChange: (tab: string) => void;
-  currentUser: AuthorizedUser;
-  onOpenGoogleSignIn: () => void;
+  currentUser: TeacherUser;
+  onOpenUserModal: () => void;
   onOpenAiModal: () => void;
   isOpenMobile: boolean;
   onCloseMobile: () => void;
@@ -31,7 +29,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   currentTab,
   onTabChange,
   currentUser,
-  onOpenGoogleSignIn,
+  onOpenUserModal,
   onOpenAiModal,
   isOpenMobile,
   onCloseMobile,
@@ -46,15 +44,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'calendar', label: '2027年行事历', icon: CalendarDays },
     { id: 'announcements', label: '校园通知公告', icon: BellRing },
   ];
-
-  // 仅当 isSuperAdmin === true 时才显示管理 10 人成员访问权限选项
-  if (currentUser.isSuperAdmin) {
-    navItems.push({
-      id: 'manage_access',
-      label: '管理10人成员权限',
-      icon: ShieldCheck
-    });
-  }
 
   const handleSelectTab = (id: string) => {
     onTabChange(id);
@@ -100,16 +89,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </button>
         </div>
 
-        {/* 当前登录教职员（Google 认证卡片） */}
+        {/* 当前登录教师后端卡片：职称统一为 IT老师 / 资讯处助理 */}
         <div className="p-3.5 mx-3 my-3 bg-slate-800/80 rounded-xl border border-slate-700/60">
           <div className="flex items-center justify-between text-xs mb-2">
-            <span className="text-slate-400">Google 认证账号</span>
+            <span className="text-slate-400">当前教职员</span>
             <button
-              onClick={onOpenGoogleSignIn}
+              onClick={onOpenUserModal}
               className="text-xs text-sky-400 hover:text-sky-300 font-medium underline underline-offset-2 transition flex items-center gap-1"
             >
-              <LogIn className="h-3 w-3" />
-              <span>切换</span>
+              <Users className="h-3 w-3" />
+              <span>切换老师</span>
             </button>
           </div>
           <div className="flex items-center gap-2.5">
@@ -117,16 +106,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {currentUser.name.slice(0, 1)}
             </div>
             <div className="min-w-0">
-              <div className="text-sm font-semibold text-white truncate flex items-center gap-1">
-                <span>{currentUser.name}</span>
-                {currentUser.isSuperAdmin && (
-                  <span className="text-[9px] bg-indigo-500/30 text-indigo-300 border border-indigo-400/30 px-1 rounded">
-                    Admin
-                  </span>
-                )}
+              <div className="text-sm font-semibold text-white truncate">
+                {currentUser.name}
               </div>
-              <div className="text-xs text-slate-300 truncate font-mono">
-                {currentUser.email}
+              <div className="text-xs text-slate-300 truncate font-medium">
+                IT老师 / 资讯处助理
               </div>
             </div>
           </div>
@@ -140,23 +124,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentTab === item.id;
-            const isManage = item.id === 'manage_access';
-
             return (
               <button
                 key={item.id}
                 onClick={() => handleSelectTab(item.id)}
                 className={`w-full flex items-center gap-3 px-3.5 py-2.5 sm:py-3 rounded-xl text-sm font-medium transition-all ${
                   isActive
-                    ? isManage 
-                      ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30 font-bold'
-                      : 'bg-sky-600 text-white shadow-sm shadow-sky-600/30'
-                    : isManage
-                    ? 'text-indigo-300 hover:bg-slate-800 hover:text-white'
+                    ? 'bg-sky-600 text-white shadow-sm shadow-sky-600/30'
                     : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                 }`}
               >
-                <Icon className={`h-5 w-5 ${isActive ? 'text-white' : isManage ? 'text-indigo-400' : 'text-slate-400'}`} />
+                <Icon className={`h-5 w-5 ${isActive ? 'text-white' : 'text-slate-400'}`} />
                 <span>{item.label}</span>
               </button>
             );
