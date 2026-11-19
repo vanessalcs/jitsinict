@@ -1,0 +1,12 @@
+{
+  "webAppConfig": {
+    "projectId": "jit-sin-ai",
+    "appId": "1:1092143531106:web:7733f9b8a3c64bfaccfd3b",
+    "apiKey": "AIzaSyAnrX3n5i47sOiEEOo4iiY6pqpE5Uy13UE",
+    "authDomain": "jit-sin-ai.firebaseapp.com",
+    "storageBucket": "jit-sin-ai.firebasestorage.app",
+    "messagingSenderId": "1092143531106",
+    "measurementId": "G-KHXFLQD55P"
+  },
+  "databaseId": "app-builder-44ef90f9"
+}
