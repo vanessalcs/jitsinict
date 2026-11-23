@@ -4,7 +4,6 @@
  * Copyright 2025 Google LLC
  * SPDX-License-Identifier: Apache-2.0
  */
-import 'dotenv/config';
 import express from 'express';
 import { GoogleAuth } from 'google-auth-library';
 import fetch from 'node-fetch';
@@ -498,7 +497,7 @@ app.post('/api-proxy', async (req, res) => {
   } catch (error) {
     console.error(`[Node Proxy] Error proxying request for ${apiClient.name}`);
     console.error(error)
-    res.status(500).json({ error: error });
+    res.status(500).json({ error: error?.message || 'Internal proxy error' });
   }
 });
 
@@ -579,9 +578,6 @@ server.on('upgrade', async (request, socket, head) => {
       wss.handleUpgrade(request, socket, head, (ws) => {
 
         upstreamWs.on('message', (data, isBinary) => {
-          const logMsg = isBinary ? '<Binary Data>' : data.toString();
-          console.log(`[Upstream -> Client] [${new Date().toISOString()}]: ${logMsg}`);
-
           if (ws.readyState === WebSocket.OPEN) {
             if (data === undefined || data === null) {
               console.warn('[Node Proxy] Attempted to send undefined/null data to client');
@@ -592,8 +588,6 @@ server.on('upgrade', async (request, socket, head) => {
         });
 
         ws.on('message', (data, isBinary) => {
-          const logMsg = isBinary ? '<Binary Data>' : data.toString();
-
           const messageVerdict = validateProxiedRequestBody(data.toString(), WEB_SOCKET_BODY_POLICY);
           if (!messageVerdict.allowed) {
             console.error('[Node Proxy] Rejected message from client:', messageVerdict.reason);

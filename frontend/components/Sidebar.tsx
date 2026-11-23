@@ -11,7 +11,11 @@ import {
   BookOpenCheck,
   X,
   Users,
-  Monitor
+  Monitor,
+  TrendingUp,
+  ShieldCheck,
+  HardDrive,
+  LogOut
 } from 'lucide-react';
 import { TeacherUser } from '../types';
 
@@ -19,8 +23,10 @@ interface SidebarProps {
   currentTab: string;
   onTabChange: (tab: string) => void;
   currentUser: TeacherUser;
+  isSuperAdmin: boolean;
   onOpenUserModal: () => void;
   onOpenAiModal: () => void;
+  onLogout: () => void;
   isOpenMobile: boolean;
   onCloseMobile: () => void;
 }
@@ -29,20 +35,29 @@ export const Sidebar: React.FC<SidebarProps> = ({
   currentTab,
   onTabChange,
   currentUser,
+  isSuperAdmin,
   onOpenUserModal,
   onOpenAiModal,
+  onLogout,
   isOpenMobile,
   onCloseMobile,
 }) => {
   const navItems = [
     { id: 'dashboard', label: '工作台总览', icon: LayoutDashboard },
     { id: 'journal', label: '教室教学日志', icon: BookOpenCheck },
+    { id: 'progress', label: '教学进度与学情', icon: TrendingUp },
     { id: 'resources', label: '教材·试卷·课件库', icon: BookMarked },
     { id: 'grades', label: '学生成绩与作业', icon: GraduationCap },
     { id: 'timetable', label: '电脑室周课表与维修', icon: Clock },
     { id: 'documents', label: '公文与空白表单', icon: FileText },
     { id: 'calendar', label: '2027年行事历', icon: CalendarDays },
     { id: 'announcements', label: '校园通知公告', icon: BellRing },
+    ...(isSuperAdmin
+      ? [
+          { id: 'files', label: '文件管理后台', icon: HardDrive },
+          { id: 'access', label: '成员权限管理', icon: ShieldCheck },
+        ]
+      : []),
   ];
 
   const handleSelectTab = (id: string) => {
@@ -110,7 +125,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 {currentUser.name}
               </div>
               <div className="text-xs text-slate-300 truncate font-medium">
-                IT老师 / 资讯处助理
+                {currentUser.title}
               </div>
             </div>
           </div>
@@ -156,6 +171,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <p className="text-[11px] text-center text-slate-400 mt-2">
             教学日志备课 · 试卷课件 · 维修排障
           </p>
+          <button
+            onClick={onLogout}
+            className="w-full mt-3 flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs text-slate-300 hover:text-white hover:bg-slate-800 transition"
+          >
+            <LogOut className="h-4 w-4" />
+            <span>退出登录</span>
+          </button>
         </div>
       </aside>
     </>

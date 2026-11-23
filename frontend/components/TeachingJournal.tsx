@@ -2,19 +2,15 @@ import React, { useState } from 'react';
 import { 
   BookOpenCheck, 
   Calendar, 
-  Clock, 
   Plus, 
   Search, 
-  ChevronRight, 
   History, 
   FileText, 
   Sparkles, 
   CheckCircle2, 
-  AlertCircle,
-  Download,
-  Filter
 } from 'lucide-react';
 import { TeachingJournalEntry, TeacherUser } from '../types';
+import { notify } from '../utils/toast';
 import { SCHOOL_CLASS_GROUPS, getSubjectByClass } from '../data/classes';
 import { DAILY_PERIOD_SCHEDULE } from '../data/scheduleSlots';
 import { askGeminiAssistant } from '../services/geminiService';
@@ -70,7 +66,7 @@ export const TeachingJournal: React.FC<TeachingJournalProps> = ({
   // AI 辅助提炼教后反思与下周备忘
   const handleAiAssistReflection = async () => {
     if (!topicTitle.trim() || !contentSummary.trim()) {
-      alert('请先输入教学课题与内容要点，AI 才能为您生成反思与下周规划！');
+      notify('请先输入教学课题与内容要点，AI 才能为您生成反思与下周规划！');
       return;
     }
     setAiPolishing(true);
@@ -85,7 +81,7 @@ export const TeachingJournal: React.FC<TeachingJournalProps> = ({
       const response = await askGeminiAssistant(prompt, 'it_teacher');
       setNextWeekPlan(response);
     } catch {
-      alert('AI 辅助生成失败，请稍后重试。');
+      notify('AI 辅助生成失败，请稍后重试。');
     } finally {
       setAiPolishing(false);
     }
@@ -94,7 +90,7 @@ export const TeachingJournal: React.FC<TeachingJournalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!topicTitle.trim()) {
-      alert('请输入教学课题名称！');
+      notify('请输入教学课题名称！');
       return;
     }
 
@@ -357,7 +353,7 @@ export const TeachingJournal: React.FC<TeachingJournalProps> = ({
                   <label className="block text-xs font-medium text-slate-600 mb-1">电脑室场地</label>
                   <select
                     value={labRoom}
-                    onChange={(e) => setLabRoom(e.target.value as any)}
+                    onChange={(e) => setLabRoom(e.target.value as typeof labRoom)}
                     className="w-full text-xs p-2.5 border rounded-xl outline-none bg-white font-medium"
                   >
                     <option value="Lab A">Lab A (60座)</option>

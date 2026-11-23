@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Check, UserPlus, Shield, User, School, Database, Info } from 'lucide-react';
+import { X, Check, UserPlus, Info } from 'lucide-react';
 import { TeacherUser, UserRole } from '../types';
 
 interface UserSwitchModalProps {

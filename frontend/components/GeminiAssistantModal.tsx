@@ -5,12 +5,8 @@ import {
   Send, 
   Bot, 
   User, 
-  RefreshCw, 
   Copy, 
   Check, 
-  BookOpen, 
-  Wrench, 
-  FileCheck 
 } from 'lucide-react';
 import { UserRole } from '../types';
 import { askGeminiAssistant } from '../services/geminiService';

@@ -15,7 +15,8 @@ import {
   CheckCircle2,
   Download
 } from 'lucide-react';
-import { StudentGrade, HomeworkSubmission, SchoolSubject } from '../types';
+import { StudentGrade, HomeworkSubmission } from '../types';
+import { notify } from '../utils/toast';
 import { SCHOOL_CLASS_GROUPS, getSubjectByClass } from '../data/classes';
 import { calculateStudentTotal } from '../utils/pdfExport';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
@@ -60,7 +61,6 @@ export const GradeManager: React.FC<GradeManagerProps> = ({
   // 发布作业模态框
   const [showAddHwModal, setShowAddHwModal] = useState(false);
   const [newHwTitle, setNewHwTitle] = useState('');
-  const [newHwCourse, setNewHwCourse] = useState<SchoolSubject>('电脑资讯与工艺');
   const [newHwClass, setNewHwClass] = useState('J1U1');
   const [newHwDue, setNewHwDue] = useState('2025-03-25');
   const [newHwDesc, setNewHwDesc] = useState('');
@@ -300,7 +300,7 @@ export const GradeManager: React.FC<GradeManagerProps> = ({
       URL.revokeObjectURL(url);
       triggerNotice(`已成功导出「${selectedClass}_学生成绩花名册.csv」到您的电脑！`);
     } catch (e) {
-      alert('导出 CSV 失败！');
+      notify('导出 CSV 失败！');
     }
   };
 
@@ -333,7 +333,7 @@ export const GradeManager: React.FC<GradeManagerProps> = ({
 
       triggerNotice(`已成功下载「${hw.title}」批改名册到电脑！`);
     } catch {
-      alert('下载作业名册失败！');
+      notify('下载作业名册失败！');
     }
   };
 
@@ -369,11 +369,11 @@ export const GradeManager: React.FC<GradeManagerProps> = ({
     e.preventDefault();
     const cleanId = newStudentId.replace(/\D/g, '').slice(0, 5);
     if (cleanId.length !== 5) {
-      alert('学号必须为 5 位纯数字，例如：24101');
+      notify('学号必须为 5 位纯数字，例如：24101');
       return;
     }
     if (!newChineseName.trim() || !newEnglishName.trim()) {
-      alert('请完整填写中文姓名和英文姓名');
+      notify('请完整填写中文姓名和英文姓名');
       return;
     }
 
@@ -1008,7 +1008,7 @@ export const GradeManager: React.FC<GradeManagerProps> = ({
                         <span>下载名单</span>
                       </button>
                       <button
-                        onClick={() => alert(`已开启「${hw.title}」学生代码线上批阅面板`)}
+                        onClick={() => notify(`已开启「${hw.title}」学生代码线上批阅面板`, 'info')}
                         className="text-xs font-semibold text-sky-600 hover:text-sky-700 flex items-center gap-1"
                       >
                         <FileCheck className="h-3.5 w-3.5" />

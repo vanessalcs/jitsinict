@@ -1,9 +1,0 @@
-{
-  "name": "jitsin-backend",
-  "version": "1.0.0",
-  "private": true,
-  "description": "资讯处 / 电脑科 数据处理与教研服务后端",
-  "scripts": {
-    "start": "node index.js"
-  }
-}

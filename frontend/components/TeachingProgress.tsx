@@ -1,20 +1,14 @@
 import React, { useState } from 'react';
 import { 
   CheckCircle2, 
-  Clock, 
   Sparkles, 
   Plus, 
   Search, 
   BookOpen, 
   TrendingUp, 
-  AlertCircle, 
-  BarChart2, 
-  FileEdit, 
   Calendar,
-  Layers,
-  ArrowRight
 } from 'lucide-react';
-import { TeachingProgressRecord, TeacherUser, SchoolSubject } from '../types';
+import { TeachingProgressRecord, TeacherUser } from '../types';
 import { SCHOOL_CLASS_GROUPS, getSubjectByClass } from '../data/classes';
 import { generateTeachingProgressAdvice } from '../services/geminiService';
 

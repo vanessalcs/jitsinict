@@ -5,21 +5,25 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
     "preview": "vite preview"
   },
   "dependencies": {
-    "react": "latest",
-    "react-dom": "latest",
-    "@google/genai": "latest",
-    "lucide-react": "latest",
-    "recharts": "latest",
-    "framer-motion": "latest"
+    "@google/genai": "^3.6.1",
+    "firebase": "^13.4.0",
+    "framer-motion": "^14.14.0",
+    "lucide-react": "^1.76.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "recharts": "^3.11.0"
   },
   "devDependencies": {
-    "@types/node": "latest",
-    "@vitejs/plugin-react": "latest",
-    "typescript": "latest",
-    "vite": "latest"
+    "@types/node": "^25.9.9",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.3.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8"
   }
 }

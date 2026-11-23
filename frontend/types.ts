@@ -15,6 +15,37 @@ export interface TeacherUser {
   assignedClasses: string[];
 }
 
+// 授权成员档案 (对应 Firestore authorized_users/{email})
+export interface AuthorizedUser {
+  email: string; // 小写
+  name: string;
+  title: string;
+  department: string;
+  avatarColor: string;
+  isActive: boolean;
+  isSuperAdmin: boolean;
+  canPostAnnouncements: boolean;
+  canComment: boolean;
+  allowedReports: string[];
+}
+
+// 教学进度记录
+export interface TeachingProgressRecord {
+  id: string;
+  subjectType: SchoolSubject;
+  courseName: string;
+  className: string;
+  unitName: string;
+  lessonNumber: number;
+  totalLessons: number;
+  currentStatus: 'in_progress' | 'completed' | 'pending';
+  lastTaughtDate: string; // YYYY-MM-DD
+  keyConcepts: string[];
+  studentMasteryRate: number; // 0 ~ 100
+  reflectionNotes: string;
+  teacherName: string;
+}
+
 export type ResourceType = 'textbook' | 'exam_paper' | 'powerpoint' | 'lab_project';
 
 export interface TeachingResource {
@@ -27,8 +58,16 @@ export interface TeachingResource {
   authorTeacherName: string;
   authorDepartment: string;
   uploadedAt: string;
-  fileFormat: 'PPTX' | 'PDF' | 'DOCX' | 'ZIP' | 'PY';
+  fileFormat: 'PPTX' | 'PDF' | 'DOCX' | 'XLSX' | 'TXT' | 'ZIP' | 'PY';
   fileSize: string;
+  // 仅「真实上传的文件」才有：存放在 Firebase Storage 中的原始文件信息
+  file?: {
+    fileName: string;
+    storagePath: string;
+    downloadUrl: string;
+    sizeBytes: number;
+    uploadedByEmail: string;
+  };
   downloadCount: number;
   description: string;
   contentOutline?: string;
@@ -121,6 +160,15 @@ export interface SchoolDocument {
   fileSize: string;
   isTemplate: boolean;
   contentTemplate: string;
+  // 仅「上传的文件」才有：存放在 Firebase Storage 中的原始文件信息
+  file?: {
+    fileName: string;
+    storagePath: string;
+    downloadUrl: string;
+    sizeBytes: number;
+    uploadedByEmail: string;
+    uploadedByName: string;
+  };
 }
 
 export interface CalendarEvent {

@@ -6,11 +6,9 @@ import {
   Sparkles, 
   Calendar, 
   User, 
-  CheckCircle, 
-  AlertCircle,
-  FileText
 } from 'lucide-react';
 import { SchoolAnnouncement, UserRole } from '../types';
+import { notify } from '../utils/toast';
 import { generateAnnouncementDraft } from '../services/geminiService';
 
 interface AnnouncementCenterProps {
@@ -34,7 +32,7 @@ export const AnnouncementCenter: React.FC<AnnouncementCenterProps> = ({
 
   const handleAiDraft = async () => {
     if (!newTitle) {
-      alert('请先输入公告标题或核心主题，再让 AI 扩写与润色！');
+      notify('请先输入公告标题或核心主题，再让 AI 扩写与润色！');
       return;
     }
     setAiPolishing(true);
@@ -43,7 +41,7 @@ export const AnnouncementCenter: React.FC<AnnouncementCenterProps> = ({
       setNewTitle(draft.title);
       setNewContent(draft.content);
     } catch (e) {
-      alert('AI 润色发生异常，请稍后重试。');
+      notify('AI 润色发生异常，请稍后重试。');
     } finally {
       setAiPolishing(false);
     }
@@ -208,7 +206,7 @@ export const AnnouncementCenter: React.FC<AnnouncementCenterProps> = ({
                   <label className="block text-xs font-medium text-slate-600 mb-1">通知类别</label>
                   <select
                     value={newType}
-                    onChange={(e) => setNewType(e.target.value as any)}
+                    onChange={(e) => setNewType(e.target.value as SchoolAnnouncement['type'])}
                     className="w-full text-xs p-2.5 border border-slate-200 rounded-lg outline-none bg-white"
                   >
                     <option value="facility">设施运维与网络</option>

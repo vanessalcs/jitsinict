@@ -1,22 +1,16 @@
 import React, { useState } from 'react';
 import { 
   Clock, 
-  Calendar, 
   MapPin, 
-  User, 
   Plus, 
-  Filter, 
-  Monitor, 
   Wrench, 
-  CheckCircle2, 
-  AlertTriangle, 
   FileText, 
-  Download, 
   Printer, 
-  Sparkles,
   Coffee
 } from 'lucide-react';
 import { TimetableSlot, LabMaintenanceTicket } from '../types';
+import { notify } from '../utils/toast';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 import { SCHOOL_CLASS_GROUPS, getSubjectByClass } from '../data/classes';
 import { DAILY_PERIOD_SCHEDULE } from '../data/scheduleSlots';
 import { initialLabTickets } from '../data/initialData';
@@ -32,10 +26,7 @@ export const Timetable: React.FC<TimetableProps> = ({ slots, onAddSlot }) => {
   const [showAddModal, setShowAddModal] = useState(false);
   
   // 电脑室维护工单数据
-  const [tickets, setTickets] = useState<LabMaintenanceTicket[]>(() => {
-    const saved = localStorage.getItem('eduit_lab_tickets');
-    return saved ? JSON.parse(saved) : initialLabTickets;
-  });
+  const [tickets, setTickets] = useLocalStorage<LabMaintenanceTicket[]>('eduit_lab_tickets', initialLabTickets);
 
   // 手机端单日选择器: 1 (周一) 到 5 (周五)
   const [selectedMobileDay, setSelectedMobileDay] = useState<number>(1);
@@ -101,7 +92,7 @@ export const Timetable: React.FC<TimetableProps> = ({ slots, onAddSlot }) => {
   const handleCreateTicket = (e: React.FormEvent) => {
     e.preventDefault();
     if (!tktStation.trim() || !tktDesc.trim()) {
-      alert('请填写电脑号机位及故障现象！');
+      notify('请填写电脑号机位及故障现象！');
       return;
     }
 
@@ -123,27 +114,24 @@ export const Timetable: React.FC<TimetableProps> = ({ slots, onAddSlot }) => {
       status: '待维修'
     };
 
-    const updated = [newTicket, ...tickets];
-    setTickets(updated);
-    localStorage.setItem('eduit_lab_tickets', JSON.stringify(updated));
+    setTickets((prev) => [newTicket, ...prev]);
     setShowAddTicketModal(false);
     setTktStation('');
     setTktDesc('');
   };
 
   const handleUpdateTicketStatus = (id: string, newStatus: LabMaintenanceTicket['status']) => {
-    const updated = tickets.map(t => {
-      if (t.id === id) {
-        return {
-          ...t,
-          status: newStatus,
-          resolvedAt: newStatus === '已修复验收' ? new Date().toISOString().split('T')[0] : t.resolvedAt
-        };
-      }
-      return t;
-    });
-    setTickets(updated);
-    localStorage.setItem('eduit_lab_tickets', JSON.stringify(updated));
+    setTickets((prev) =>
+      prev.map((t) =>
+        t.id === id
+          ? {
+              ...t,
+              status: newStatus,
+              resolvedAt: newStatus === '已修复验收' ? new Date().toISOString().split('T')[0] : t.resolvedAt
+            }
+          : t
+      )
+    );
   };
 
   return (
@@ -478,7 +466,7 @@ export const Timetable: React.FC<TimetableProps> = ({ slots, onAddSlot }) => {
                       <td className="p-3 text-right whitespace-nowrap">
                         <select
                           value={tkt.status}
-                          onChange={(e) => handleUpdateTicketStatus(tkt.id, e.target.value as any)}
+                          onChange={(e) => handleUpdateTicketStatus(tkt.id, e.target.value as LabMaintenanceTicket['status'])}
                           className="text-xs p-1.5 border border-slate-200 rounded-lg outline-none bg-white font-medium"
                         >
                           <option value="待维修">标记：待维修</option>
@@ -556,7 +544,7 @@ export const Timetable: React.FC<TimetableProps> = ({ slots, onAddSlot }) => {
                   <label className="block text-xs font-medium text-slate-600 mb-1">性质类型</label>
                   <select
                     value={roleType}
-                    onChange={(e) => setRoleType(e.target.value as any)}
+                    onChange={(e) => setRoleType(e.target.value as typeof roleType)}
                     className="w-full text-xs p-2.5 border rounded-lg outline-none bg-white font-medium"
                   >
                     <option value="teaching">电脑课授课</option>
@@ -625,7 +613,7 @@ export const Timetable: React.FC<TimetableProps> = ({ slots, onAddSlot }) => {
                   <label className="block text-xs font-medium text-slate-600 mb-1">电脑室</label>
                   <select
                     value={tktLab}
-                    onChange={(e) => setTktLab(e.target.value as any)}
+                    onChange={(e) => setTktLab(e.target.value as typeof tktLab)}
                     className="w-full text-xs p-2.5 border rounded-lg outline-none bg-white font-semibold"
                   >
                     <option value="Lab A">Lab A (60座)</option>
@@ -651,7 +639,7 @@ export const Timetable: React.FC<TimetableProps> = ({ slots, onAddSlot }) => {
                   <label className="block text-xs font-medium text-slate-600 mb-1">故障类型</label>
                   <select
                     value={tktFaultType}
-                    onChange={(e) => setTktFaultType(e.target.value as any)}
+                    onChange={(e) => setTktFaultType(e.target.value as LabMaintenanceTicket['faultType'])}
                     className="w-full text-xs p-2.5 border rounded-lg outline-none bg-white font-medium"
                   >
                     <option value="硬件损坏">硬件损坏</option>
@@ -665,7 +653,7 @@ export const Timetable: React.FC<TimetableProps> = ({ slots, onAddSlot }) => {
                   <label className="block text-xs font-medium text-slate-600 mb-1">紧急程度</label>
                   <select
                     value={tktPriority}
-                    onChange={(e) => setTktPriority(e.target.value as any)}
+                    onChange={(e) => setTktPriority(e.target.value as LabMaintenanceTicket['priority'])}
                     className="w-full text-xs p-2.5 border rounded-lg outline-none bg-white font-medium"
                   >
                     <option value="紧急 (影响上课)">紧急 (影响上课)</option>

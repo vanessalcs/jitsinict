@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { 
   BookOpen, 
   FileText, 
@@ -7,22 +7,27 @@ import {
   Download, 
   Plus, 
   Search, 
-  Filter, 
   User, 
   Sparkles, 
-  Calendar, 
   Eye, 
   Check, 
-  Tag, 
-  Layers,
-  ArrowUpDown,
-  BookMarked
+  BookMarked,
+  Trash2
 } from 'lucide-react';
-import { TeachingResource, ResourceType, TeacherUser } from '../types';
+import { AuthorizedUser, TeachingResource, ResourceType, TeacherUser, SchoolSubject } from '../types';
+import { notify } from '../utils/toast';
 import { askGeminiAssistant } from '../services/geminiService';
+import { FILE_INPUT_ACCEPT, MAX_UPLOAD_BYTES, formatBytes, validateUploadFile } from '../services/documentFiles';
+import {
+  deleteUploadedResource,
+  incrementResourceDownload,
+  subscribeUploadedResources,
+  uploadResourceFile,
+} from '../services/resourceFiles';
 
 interface ResourceHubProps {
   resources: TeachingResource[];
+  authUser: AuthorizedUser;
   currentUser: TeacherUser;
   teachers: TeacherUser[];
   onAddResource: (newRes: TeachingResource) => void;
@@ -30,12 +35,24 @@ interface ResourceHubProps {
 }
 
 export const ResourceHub: React.FC<ResourceHubProps> = ({
-  resources,
+  resources: localResources,
+  authUser,
   currentUser,
   teachers,
   onAddResource,
   onIncrementDownload
 }) => {
+  // 已上传的真实文件资源（Firebase，实时共享）与本地资源合并显示
+  const [uploadedResources, setUploadedResources] = useState<TeachingResource[]>([]);
+  const resources = useMemo(() => [...uploadedResources, ...localResources], [uploadedResources, localResources]);
+
+  useEffect(() => {
+    return subscribeUploadedResources(setUploadedResources, (err) => {
+      console.error('Failed to load uploaded resources:', err);
+      notify('加载共享资源失败，请确认已发布 Firestore 规则。');
+    });
+  }, []);
+
   const [selectedType, setSelectedType] = useState<string>('all');
   const [selectedGrade, setSelectedGrade] = useState<string>('all');
   const [selectedTeacher, setSelectedTeacher] = useState<string>('all');
@@ -50,7 +67,8 @@ export const ResourceHub: React.FC<ResourceHubProps> = ({
   const [uploadTitle, setUploadTitle] = useState('');
   const [uploadType, setUploadType] = useState<ResourceType>('powerpoint');
   const [uploadGrade, setUploadGrade] = useState<TeachingResource['gradeLevel']>('初一');
-  const [uploadFormat, setUploadFormat] = useState<TeachingResource['fileFormat']>('PPTX');
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [uploadDesc, setUploadDesc] = useState('');
   const [uploadTags, setUploadTags] = useState('教材, 课件');
   const [uploadOutline, setUploadOutline] = useState('');
@@ -77,9 +95,22 @@ export const ResourceHub: React.FC<ResourceHubProps> = ({
   });
 
   const handleDownload = (res: TeachingResource) => {
-    onIncrementDownload(res.id);
     setDownloadSuccessId(res.id);
     setTimeout(() => setDownloadSuccessId(null), 2500);
+
+    // 真实上传的文件：直接下载原文件，并在共享记录上累加下载次数
+    if (res.file) {
+      incrementResourceDownload(res.id).catch((err) => console.error('Failed to count download:', err));
+      const a = document.createElement('a');
+      a.href = res.file.downloadUrl;
+      a.download = res.file.fileName;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.click();
+      return;
+    }
+
+    onIncrementDownload(res.id);
 
     const content = `【EduIT Hub 教师教学资源库下载回执】\n文件名：${res.title}\n格式：${res.fileFormat} (${res.fileSize})\n分享教师：${res.authorTeacherName} (${res.authorDepartment})\n适用年级：${res.gradeLevel}\n更新日期：${res.uploadedAt}\n\n简介说明：\n${res.description}\n\n=========================\n资源大纲 / 试卷题目预览：\n=========================\n${res.contentOutline || '（无附加文本大纲，已下载模拟课件数据包）'}`;
 
@@ -92,32 +123,80 @@ export const ResourceHub: React.FC<ResourceHubProps> = ({
     URL.revokeObjectURL(url);
   };
 
-  const handleUploadSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!uploadTitle.trim()) return;
+  const handleDeleteResource = async (res: TeachingResource) => {
+    if (!window.confirm(`确定要删除「${res.title}」吗？此操作无法撤销。`)) return;
+    try {
+      await deleteUploadedResource(res);
+      if (previewResource?.id === res.id) setPreviewResource(null);
+      notify('已删除。', 'success');
+    } catch (err) {
+      console.error('Delete resource failed:', err);
+      notify('删除失败：没有权限或网络异常。');
+    }
+  };
 
-    const newRes: TeachingResource = {
-      id: `res_${Date.now()}`,
-      title: uploadTitle,
-      type: uploadType,
-      gradeLevel: uploadGrade,
-      authorTeacherId: currentUser.id,
-      authorTeacherName: currentUser.name,
-      authorDepartment: currentUser.department,
-      uploadedAt: new Date().toISOString().split('T')[0],
-      fileFormat: uploadFormat,
-      fileSize: `${(Math.random() * 15 + 2).toFixed(1)} MB`,
-      downloadCount: 0,
-      description: uploadDesc || '教师上传之日常教学核心资源。',
-      contentOutline: uploadOutline || '已上传完整课件教案包。',
-      tags: uploadTags.split(',').map(t => t.trim()).filter(Boolean)
-    };
+  // 初中年级对应「电脑资讯与工艺」，其余（高中/全校通用）对应「资讯科技」
+  const subjectForGrade = (grade: TeachingResource['gradeLevel']): SchoolSubject =>
+    grade.startsWith('初') ? '电脑资讯与工艺' : '资讯科技';
 
-    onAddResource(newRes);
+  const handlePickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    const problem = validateUploadFile(file);
+    if (problem) {
+      notify(problem);
+      return;
+    }
+    setUploadFile(file);
+    if (!uploadTitle.trim()) setUploadTitle(file.name.replace(/\.[^.]+$/, ''));
+  };
+
+  const closeUploadModal = () => {
+    if (uploading) return;
     setShowUploadModal(false);
-    setUploadTitle('');
-    setUploadDesc('');
-    setUploadOutline('');
+    setUploadFile(null);
+  };
+
+  const handleUploadSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (uploading) return;
+    if (!uploadTitle.trim()) return;
+    if (!uploadFile) {
+      notify('请先选择要上传的文件。');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      await uploadResourceFile({
+        file: uploadFile,
+        uploadedByEmail: authUser.email,
+        resource: {
+          title: uploadTitle.trim(),
+          subjectCategory: subjectForGrade(uploadGrade),
+          type: uploadType,
+          gradeLevel: uploadGrade,
+          authorTeacherId: currentUser.id,
+          authorTeacherName: currentUser.name,
+          authorDepartment: currentUser.department,
+          description: uploadDesc || '教师上传之日常教学核心资源。',
+          contentOutline: uploadOutline,
+          tags: uploadTags.split(',').map((t) => t.trim()).filter(Boolean),
+        },
+      });
+      notify('资源上传成功。', 'success');
+      setUploading(false);
+      setShowUploadModal(false);
+      setUploadFile(null);
+      setUploadTitle('');
+      setUploadDesc('');
+      setUploadOutline('');
+    } catch (err) {
+      console.error('Resource upload failed:', err);
+      notify(err instanceof Error && err.message.includes('文件') ? err.message : '上传失败：没有权限或网络异常，请确认已发布 Firestore 与 Storage 规则。');
+      setUploading(false);
+    }
   };
 
   const handleGenerateWithAi = async (e: React.FormEvent) => {
@@ -145,6 +224,7 @@ export const ResourceHub: React.FC<ResourceHubProps> = ({
       const aiRes: TeachingResource = {
         id: `res_ai_${Date.now()}`,
         title: `【AI教研产出】${aiTopic} - ${aiTargetGrade}专用`,
+        subjectCategory: subjectForGrade(aiTargetGrade),
         type: aiTargetType,
         gradeLevel: aiTargetGrade,
         authorTeacherId: currentUser.id,
@@ -164,7 +244,7 @@ export const ResourceHub: React.FC<ResourceHubProps> = ({
       setPreviewResource(aiRes);
       setAiTopic('');
     } catch (err: any) {
-      alert('AI 资源生成失败，请检查网络连接。');
+      notify('AI 资源生成失败，请检查网络连接。');
     } finally {
       setAiLoading(false);
     }
@@ -389,6 +469,16 @@ export const ResourceHub: React.FC<ResourceHubProps> = ({
                     <Eye className="h-4 w-4" />
                   </button>
 
+                  {res.file && (res.file.uploadedByEmail === authUser.email.toLowerCase() || authUser.isSuperAdmin) && (
+                    <button
+                      onClick={() => handleDeleteResource(res)}
+                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                      title="删除该上传文件"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
+
                   <button
                     onClick={() => handleDownload(res)}
                     className="flex items-center gap-1 px-2.5 py-1.5 bg-sky-50 hover:bg-sky-100 text-sky-700 font-semibold rounded-lg transition border border-sky-200 text-xs"
@@ -521,7 +611,7 @@ export const ResourceHub: React.FC<ResourceHubProps> = ({
                   <label className="block text-xs font-medium text-slate-600 mb-1">资源类型</label>
                   <select
                     value={uploadType}
-                    onChange={(e) => setUploadType(e.target.value as any)}
+                    onChange={(e) => setUploadType(e.target.value as ResourceType)}
                     className="w-full text-xs p-2.5 border rounded-xl outline-none bg-white"
                   >
                     <option value="powerpoint">教学课件 PPT</option>
@@ -535,7 +625,7 @@ export const ResourceHub: React.FC<ResourceHubProps> = ({
                   <label className="block text-xs font-medium text-slate-600 mb-1">适用年级</label>
                   <select
                     value={uploadGrade}
-                    onChange={(e) => setUploadGrade(e.target.value as any)}
+                    onChange={(e) => setUploadGrade(e.target.value as TeachingResource['gradeLevel'])}
                     className="w-full text-xs p-2.5 border rounded-xl outline-none bg-white"
                   >
                     <option value="初一">初一</option>
@@ -548,32 +638,33 @@ export const ResourceHub: React.FC<ResourceHubProps> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">文件格式</label>
-                  <select
-                    value={uploadFormat}
-                    onChange={(e) => setUploadFormat(e.target.value as any)}
-                    className="w-full text-xs p-2.5 border rounded-xl outline-none bg-white"
-                  >
-                    <option value="PPTX">PPTX (PowerPoint 课件)</option>
-                    <option value="PDF">PDF (文档/试卷)</option>
-                    <option value="DOCX">DOCX (Word 试卷)</option>
-                    <option value="ZIP">ZIP (工程/代码压缩包)</option>
-                    <option value="PY">PY (Python 代码脚本)</option>
-                  </select>
-                </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">
+                  选择文件（PDF / Word / Excel / PowerPoint 等文档，不超过 {formatBytes(MAX_UPLOAD_BYTES)}）
+                </label>
+                <input
+                  type="file"
+                  accept={FILE_INPUT_ACCEPT}
+                  onChange={handlePickFile}
+                  disabled={uploading}
+                  className="w-full text-xs file:mr-3 file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:bg-slate-100 file:text-slate-700 file:font-medium hover:file:bg-slate-200"
+                />
+                {uploadFile && (
+                  <p className="text-[11px] text-slate-500 mt-1.5 break-all">
+                    已选择：{uploadFile.name}（{formatBytes(uploadFile.size)}）
+                  </p>
+                )}
+              </div>
 
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">检索标签（以逗号分隔）</label>
-                  <input
-                    type="text"
-                    value={uploadTags}
-                    onChange={(e) => setUploadTags(e.target.value)}
-                    placeholder="例如: Python, 循环, 测评"
-                    className="w-full text-xs p-2.5 border rounded-xl outline-none"
-                  />
-                </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">检索标签（以逗号分隔）</label>
+                <input
+                  type="text"
+                  value={uploadTags}
+                  onChange={(e) => setUploadTags(e.target.value)}
+                  placeholder="例如: Python, 循环, 测评"
+                  className="w-full text-xs p-2.5 border rounded-xl outline-none"
+                />
               </div>
 
               <div>
@@ -601,16 +692,18 @@ export const ResourceHub: React.FC<ResourceHubProps> = ({
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowUploadModal(false)}
+                  onClick={closeUploadModal}
+                  disabled={uploading}
                   className="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-xl"
                 >
                   取消
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-xs font-semibold bg-sky-600 hover:bg-sky-700 text-white rounded-xl"
+                  disabled={uploading || !uploadFile}
+                  className="px-4 py-2 text-xs font-semibold bg-sky-600 hover:bg-sky-700 disabled:bg-slate-300 text-white rounded-xl"
                 >
-                  确认上传校库
+                  {uploading ? '上传中...' : '确认上传校库'}
                 </button>
               </div>
             </form>
@@ -650,7 +743,7 @@ export const ResourceHub: React.FC<ResourceHubProps> = ({
                   <label className="block text-xs font-medium text-slate-600 mb-1">生成资源形式</label>
                   <select
                     value={aiTargetType}
-                    onChange={(e) => setAiTargetType(e.target.value as any)}
+                    onChange={(e) => setAiTargetType(e.target.value as ResourceType)}
                     className="w-full text-xs p-2.5 border rounded-xl outline-none bg-white"
                   >
                     <option value="exam_paper">阶段考与模拟试卷 (含详解)</option>
@@ -663,7 +756,7 @@ export const ResourceHub: React.FC<ResourceHubProps> = ({
                   <label className="block text-xs font-medium text-slate-600 mb-1">目标年级</label>
                   <select
                     value={aiTargetGrade}
-                    onChange={(e) => setAiTargetGrade(e.target.value as any)}
+                    onChange={(e) => setAiTargetGrade(e.target.value as typeof aiTargetGrade)}
                     className="w-full text-xs p-2.5 border rounded-xl outline-none bg-white"
                   >
                     <option value="初一">初一</option>

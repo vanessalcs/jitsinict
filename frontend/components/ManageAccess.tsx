@@ -1,22 +1,14 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
-  Users, 
-  Shield, 
   ShieldCheck, 
-  UserCheck, 
-  UserX, 
   Plus, 
   Edit3, 
   Check, 
-  X, 
-  BellRing, 
-  MessageSquare, 
-  FileText, 
-  AlertTriangle,
   Info
 } from 'lucide-react';
 import { AuthorizedUser } from '../types';
-import { getAuthorizedUsersList, saveAuthorizedUsersList } from '../services/authService';
+import { notify } from '../utils/toast';
+import { getAuthorizedUsersList, saveAuthorizedUser } from '../services/authService';
 
 interface ManageAccessProps {
   currentUser: AuthorizedUser;
@@ -35,7 +27,18 @@ export const ManageAccess: React.FC<ManageAccessProps> = ({
   currentUser,
   onRefreshCurrentUser,
 }) => {
-  const [users, setUsers] = useState<AuthorizedUser[]>(() => getAuthorizedUsersList());
+  const [users, setUsers] = useState<AuthorizedUser[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getAuthorizedUsersList()
+      .then(setUsers)
+      .catch((err) => {
+        console.error('Failed to load authorized users:', err);
+        notify('加载成员名单失败，请确认您具有超级管理员权限。');
+      })
+      .finally(() => setLoading(false));
+  }, []);
   const [editingEmail, setEditingEmail] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<Partial<AuthorizedUser>>({});
 
@@ -50,10 +53,20 @@ export const ManageAccess: React.FC<ManageAccessProps> = ({
   const [newCanComment, setNewCanComment] = useState(true);
   const [newReports, setNewReports] = useState<string[]>(['grade_summary']);
 
-  // 保存到本地
-  const persistUsers = (updated: AuthorizedUser[]) => {
+  // 保存变更到 Firestore（仅写入发生变化的成员文档）
+  const persistUsers = async (updated: AuthorizedUser[]) => {
+    const changed = updated.filter((u) => {
+      const before = users.find((x) => x.email === u.email);
+      return !before || JSON.stringify(before) !== JSON.stringify(u);
+    });
+    try {
+      await Promise.all(changed.map(saveAuthorizedUser));
+    } catch (err) {
+      console.error('Failed to save authorized users:', err);
+      notify('保存失败：没有权限或网络异常。');
+      return;
+    }
     setUsers(updated);
-    saveAuthorizedUsersList(updated);
     // 若更新的是当前用户，同步更新当前登录信息
     const currentUpdated = updated.find(u => u.email.toLowerCase() === currentUser.email.toLowerCase());
     if (currentUpdated) {
@@ -138,16 +151,16 @@ export const ManageAccess: React.FC<ManageAccessProps> = ({
     }
   };
 
-  const handleCreateNewStaff = (e: React.FormEvent) => {
+  const handleCreateNewStaff = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanEmail = newEmail.trim().toLowerCase();
     if (!cleanEmail || !newName.trim()) {
-      alert('请填写完整的邮箱与姓名！');
+      notify('请填写完整的邮箱与姓名！');
       return;
     }
 
     if (users.some(u => u.email.toLowerCase() === cleanEmail)) {
-      alert('此邮箱已在名单中！');
+      notify('此邮箱已在名单中！');
       return;
     }
 
@@ -174,7 +187,7 @@ export const ManageAccess: React.FC<ManageAccessProps> = ({
       allowedReports: newReports
     };
 
-    persistUsers([created, ...users]);
+    await persistUsers([created, ...users]);
     setShowAddModal(false);
     setNewEmail('');
     setNewName('');
@@ -234,6 +247,11 @@ export const ManageAccess: React.FC<ManageAccessProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
+              {loading && (
+                <tr>
+                  <td colSpan={8} className="p-6 text-center text-slate-400">正在加载成员名单…</td>
+                </tr>
+              )}
               {users.map((u) => {
                 const isEditing = editingEmail === u.email;
 

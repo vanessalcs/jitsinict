@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, Calendar, School, Shield, User, Menu, Database, Users } from 'lucide-react';
+import { Sparkles, Calendar, Menu, Database } from 'lucide-react';
 import { TeacherUser } from '../types';
 
 interface HeaderProps {
@@ -65,7 +65,7 @@ export const Header: React.FC<HeaderProps> = ({ currentUser, onOpenAi, onOpenMen
               <span className="text-[10px] text-sky-600 bg-sky-50 px-1 rounded">切换</span>
             </div>
             <div className="text-[11px] text-slate-400 truncate max-w-[140px]">
-              IT老师 / 资讯处助理
+              {currentUser.title}
             </div>
           </div>
         </button>

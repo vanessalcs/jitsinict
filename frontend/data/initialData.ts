@@ -8,14 +8,15 @@ import {
   TeacherUser,
   TeachingResource,
   TeachingJournalEntry,
-  LabMaintenanceTicket
+  LabMaintenanceTicket,
+  TeachingProgressRecord
 } from '../types';
 
 export const initialTeachers: TeacherUser[] = [
   {
     id: 'u_huang',
     name: '黄世泓',
-    email: 'huang.sh@eduit.edu',
+    email: 'shng@jitsin-ind.edu.my',
     role: 'it_teacher',
     title: 'IT老师 / 资讯处助理',
     department: '资讯处 / 电脑科',
@@ -25,412 +26,81 @@ export const initialTeachers: TeacherUser[] = [
   {
     id: 'u_lin',
     name: '林慈贤',
-    email: 'lin.cx@eduit.edu',
+    email: 'cslim@jitsin-ind.edu.my',
     role: 'it_admin',
     title: 'IT老师 / 资讯处助理',
     department: '资讯处 / 电脑科',
     avatarColor: 'from-emerald-500 to-teal-600',
     assignedClasses: ['J1U3', 'J2U2', 'J3U1', 'S1C1', 'S3SC']
+  },
+  {
+    id: 'u_zheng',
+    name: '郑毓铭',
+    email: 'ymteh@jitsin-ind.edu.my',
+    role: 'it_teacher',
+    title: 'IT老师 / 资讯处助理',
+    department: '资讯处 / 电脑科',
+    avatarColor: 'from-amber-500 to-orange-600',
+    assignedClasses: []
+  },
+  {
+    id: 'u_wu',
+    name: '吴镇宏',
+    email: 'chenhungng@jitsin-ind.edu.my',
+    role: 'it_teacher',
+    title: 'IT老师 / 资讯处助理',
+    department: '资讯处 / 电脑科',
+    avatarColor: 'from-purple-500 to-pink-600',
+    assignedClasses: []
+  },
+  {
+    id: 'u_liang',
+    name: '梁可桔',
+    email: 'kjleong@jitsin-ind.edu.my',
+    role: 'it_teacher',
+    title: 'IT老师 / 资讯处助理',
+    department: '资讯处 / 电脑科',
+    avatarColor: 'from-rose-500 to-red-600',
+    assignedClasses: []
+  },
+  {
+    id: 'u_liao',
+    name: '廖梧茳',
+    email: 'bkleow@jitsin-ind.edu.my',
+    role: 'it_admin',
+    title: 'IT老师 兼 资讯处主任',
+    department: '资讯处 / 电脑科',
+    avatarColor: 'from-cyan-500 to-blue-600',
+    assignedClasses: []
+  },
+  {
+    id: 'u_ict',
+    name: '资讯处',
+    email: 'ict@jitsin-ind.edu.my',
+    role: 'it_admin',
+    title: '资讯处公共账号',
+    department: '资讯处 / 电脑科',
+    avatarColor: 'from-slate-500 to-slate-700',
+    assignedClasses: []
   }
 ];
 
 // 教室教学日志初始记录 (方便老师查看上周教了什么，每周清晰填报)
-export const initialTeachingJournals: TeachingJournalEntry[] = [
-  {
-    id: 'jnl_1',
-    weekNumber: 8,
-    date: '2027-03-08',
-    periodNumber: 1,
-    className: 'J1U1',
-    subjectType: '电脑资讯与工艺',
-    labRoom: 'Lab A',
-    teacherName: '黄世泓',
-    topicTitle: 'Python 循环进阶：嵌套循环与二维乘法表绘制',
-    contentSummary: '复习单层 for 循环范围定义，引入外层行与内层列的控制变量概念；在 Lab A 实机编写并调试 9x9 乘法表。',
-    homeworkAssigned: '完成作业本实验题 3-2：倒三角形星号图案打印。',
-    previousWeekSummary: '【上周已授】：第七周第1节讲解 if-elif-else 多条件选择分支，并完成成绩等第换算器编写。',
-    studentFeedback: '全班60位学生均按机位就座，52位在当堂成功输出完整乘法表，8位学生在 print(end="") 参数理解上需要协助。',
-    nextWeekPlan: '第九周将讲授 while 循环条件与死循环规避技巧。',
-    createdAt: '2027-03-08 08:35'
-  },
-  {
-    id: 'jnl_2',
-    weekNumber: 8,
-    date: '2027-03-09',
-    periodNumber: 4,
-    className: 'J2U2',
-    subjectType: '电脑资讯与工艺',
-    labRoom: 'Lab B',
-    teacherName: '林慈贤',
-    topicTitle: '网络信息素养：网络欺凌防范与数字足迹审查',
-    contentSummary: '在 Lab B 引导学生使用模拟平台分析虚假社交账号特征，完成个人数字隐私权限核查演练。',
-    homeworkAssigned: '提交反钓鱼邮件情境判断短文 (300字)。',
-    previousWeekSummary: '【上周已授】：第七周第4节完成强密码构成要素实验，并测试散列加密强度。',
-    studentFeedback: '课堂讨论热烈，互动问答达标率高。Lab B 14号机键盘退格键偶有卡顿，已提报维修工单。',
-    nextWeekPlan: '第九周进入网页 HTML 骨架标签设计。',
-    createdAt: '2027-03-09 11:55'
-  },
-  {
-    id: 'jnl_3',
-    weekNumber: 8,
-    date: '2027-03-10',
-    periodNumber: 3,
-    className: 'S1A2',
-    subjectType: '资讯科技',
-    labRoom: 'Lab C',
-    teacherName: '黄世泓',
-    topicTitle: '计算机网络协议：IPv4 子网掩码与 CIDR 计算',
-    contentSummary: '讲解 IP 地址网络号与主机号拆分方法，通过二进制 AND 运算推导子网广播地址；在 Lab C 运行 Packet Tracer 进行 Ping 测试。',
-    homeworkAssigned: '完成 5 道不同掩码(/24, /26, /28)子网有效主机数量换算。',
-    previousWeekSummary: '【上周已授】：第七周第3节梳理 OSI 体系模型与 TCP/IP 体系映射关系。',
-    studentFeedback: '高一同学理解迅速，Packet Tracer 实验完成度 95%。',
-    nextWeekPlan: '第九周安排路由器静态路由表配置实战。',
-    createdAt: '2027-03-10 10:20'
-  }
-];
+export const initialTeachingJournals: TeachingJournalEntry[] = [];
 
 // 电脑室硬件/网络故障报修工单 (让资讯处技术人员一目了然)
-export const initialLabTickets: LabMaintenanceTicket[] = [
-  {
-    id: 'tkt_001',
-    labRoom: 'Lab A',
-    stationNumber: '电脑号 A18',
-    faultType: '硬件损坏',
-    priority: '普通',
-    reportedBy: '黄世泓',
-    reportedAt: '2027-03-08 08:35',
-    description: 'A18 学生电脑电源按键弹簧老化卡死，按压无法回弹开机，需要更换前置机箱按键开关。',
-    status: '配件订购中',
-    technicianNotes: '已由林慈贤检查，已向总务处登记领取备用开关总成。'
-  },
-  {
-    id: 'tkt_002',
-    labRoom: 'Lab B',
-    stationNumber: '电脑号 B14',
-    faultType: '外设故障(键盘/鼠标/耳机)',
-    priority: '普通',
-    reportedBy: '林慈贤',
-    reportedAt: '2027-03-09 11:55',
-    description: '机械键盘退格键(Backspace)轴体卡顿，学生无法正常删除输入代码。',
-    status: '待维修',
-    technicianNotes: '备用 USB 键盘已在器材柜就绪，预定今日午休更换。'
-  },
-  {
-    id: 'tkt_003',
-    labRoom: 'Lab C',
-    stationNumber: '教师讲台主控投影机',
-    faultType: '硬件损坏',
-    priority: '紧急 (影响上课)',
-    reportedBy: '黄世泓',
-    reportedAt: '2027-03-09 14:30',
-    description: '投影机 HDMI 2 号接口偶尔闪屏黑屏，重插信号线后维持数分钟又出现蓝底提示无信号。',
-    status: '维修中',
-    technicianNotes: '正在测试讲台地面弱电盒中的 HDMI 转接延长线，暂由备用 VGA 线临时转接。'
-  },
-  {
-    id: 'tkt_004',
-    labRoom: 'Lab A',
-    stationNumber: '电脑号 A05',
-    faultType: '系统蓝屏/死机',
-    priority: '普通',
-    reportedBy: '黄世泓',
-    reportedAt: '2027-03-05 10:15',
-    description: '开机载入 Windows 时出现内存分页错误蓝屏代码 0x00000050。',
-    status: '已修复验收',
-    technicianNotes: '重新插拔清理两条 8GB DDR4 内存条金手指并跑 memtest 正常，已还原系统镜像。',
-    resolvedAt: '2027-03-06 16:00'
-  }
-];
+export const initialLabTickets: LabMaintenanceTicket[] = [];
 
-export const initialTeachingResources: TeachingResource[] = [
-  {
-    id: 'res_1',
-    title: '【课件PPT】初中《电脑资讯与工艺》：流程图绘制与分支判断语句',
-    subjectCategory: '电脑资讯与工艺',
-    type: 'powerpoint',
-    gradeLevel: '初一',
-    authorTeacherId: 'u_huang',
-    authorTeacherName: '黄世泓 (IT老师 / 资讯处助理)',
-    authorDepartment: '资讯处 / 电脑科',
-    uploadedAt: '2027-01-15',
-    fileFormat: 'PPTX',
-    fileSize: '14.8 MB',
-    downloadCount: 128,
-    tags: ['初中', '电脑资讯与工艺', '流程图', '条件分支'],
-    description: '适用于初中阶段教学，以生动图解演示 if-elif-else 逻辑分支，并在 Lab A 配套实战题。',
-    contentOutline: `第 1 讲：生活中的逻辑选择（红绿灯、自动售货机）\n第 2 讲：流程图标准化符号认识\n第 3 讲：代码缩进规范与关系运算符\n第 4 讲：实战演练：学生成绩等第转换算法`
-  },
-  {
-    id: 'res_2',
-    title: '【期末试卷】初中《电脑资讯与工艺》第一学期机房实机操作考卷 A/B卷',
-    subjectCategory: '电脑资讯与工艺',
-    type: 'exam_paper',
-    gradeLevel: '初一',
-    authorTeacherId: 'u_huang',
-    authorTeacherName: '黄世泓 (IT老师 / 资讯处助理)',
-    authorDepartment: '资讯处 / 电脑科',
-    uploadedAt: '2027-01-18',
-    fileFormat: 'PDF',
-    fileSize: '2.4 MB',
-    downloadCount: 245,
-    tags: ['初中真题', '电脑资讯与工艺', '机试实操', '附标准答案'],
-    description: 'Lab A、Lab B、Lab C 上机考试统一试卷，含 10 题基础选择题与 3 道实操题目。',
-    contentOutline: `一、选择题（30分，每题3分，共10题）\n二、上机操作题（70分）\n1. 规范排版与表格统计（20分）\n2. 简易程序算法实现（25分）\n3. 综合创意实操（25分）`
-  },
-  {
-    id: 'res_3',
-    title: '【校本讲义】高中《资讯科技》：计算机网络与现代信息安全讲义',
-    subjectCategory: '资讯科技',
-    type: 'textbook',
-    gradeLevel: '高一',
-    authorTeacherId: 'u_lin',
-    authorTeacherName: '林慈贤 (IT老师 / 资讯处助理)',
-    authorDepartment: '资讯处 / 电脑科',
-    uploadedAt: '2027-02-15',
-    fileFormat: 'PDF',
-    fileSize: '32.5 MB',
-    downloadCount: 184,
-    tags: ['高中教材', '资讯科技', '网络协议', '信息安全'],
-    description: '高中资讯科技学科校本拓展讲义，深度剖析 OSI 体系模型、IP 寻址与校园网络防火墙架构。',
-    contentOutline: `第一章：物理介质与局域网拓扑\n第二章：IP地址分类与子网划分计算\n第三章：DNS 域名解析与网络通信路由\n第四章：日常信息安全防护与密码学常识`
-  },
-  {
-    id: 'res_4',
-    title: '【课件PPT】高中《资讯科技》：Python 关系型数据库与SQL联表查询',
-    subjectCategory: '资讯科技',
-    type: 'powerpoint',
-    gradeLevel: '高二',
-    authorTeacherId: 'u_lin',
-    authorTeacherName: '林慈贤 (IT老师 / 资讯处助理)',
-    authorDepartment: '资讯处 / 电脑科',
-    uploadedAt: '2027-02-22',
-    fileFormat: 'PPTX',
-    fileSize: '28.2 MB',
-    downloadCount: 102,
-    tags: ['高中课件', '资讯科技', '数据库', 'SQL查询'],
-    description: '适用于高中资讯科技数据库单项教学，Lab C 实训必备课件。',
-    contentOutline: `第 1 讲：数据库基本概念与表结构\n第 2 讲：SELECT / INSERT / UPDATE 核心语句\n第 3 讲：INNER JOIN 联表查询实战\n第 4 讲：图书管理数据检索综合大作业`
-  }
-];
+export const initialTeachingResources: TeachingResource[] = [];
 
-export const initialGrades: StudentGrade[] = [
-  { 
-    id: 'g1', 
-    studentId: '24101', 
-    chineseName: '陈晓明', 
-    englishName: 'Tan Siew Ming', 
-    classGrade: 'J1U1', 
-    subjectName: '电脑资讯与工艺', 
-    exam1Score: 88, 
-    exam2Score: 92, 
-    exam3Score: 90, 
-    homeworkH1Score: 95, 
-    homeworkH2Score: 92, 
-    quizH1Score: 86, 
-    quizH2Score: 94 
-  },
-  { 
-    id: 'g2', 
-    studentId: '24102', 
-    chineseName: '林美华', 
-    englishName: 'Lim Mei Wah', 
-    classGrade: 'J1U1', 
-    subjectName: '电脑资讯与工艺', 
-    exam1Score: 78, 
-    exam2Score: 82, 
-    exam3Score: 85, 
-    homeworkH1Score: 88, 
-    homeworkH2Score: 90, 
-    quizH1Score: 76, 
-    quizH2Score: 80 
-  },
-  { 
-    id: 'g3', 
-    studentId: '24103', 
-    chineseName: '张子谦', 
-    englishName: 'Chong Zi Qian', 
-    classGrade: 'J1U1', 
-    subjectName: '电脑资讯与工艺', 
-    exam1Score: 94, 
-    exam2Score: 96, 
-    exam3Score: 95, 
-    homeworkH1Score: 98, 
-    homeworkH2Score: 100, 
-    quizH1Score: 92, 
-    quizH2Score: 96 
-  },
-  { 
-    id: 'g4', 
-    studentId: '24104', 
-    chineseName: '王若晴', 
-    englishName: 'Ong Ruo Qing', 
-    classGrade: 'J1U1', 
-    subjectName: '电脑资讯与工艺', 
-    exam1Score: 68, 
-    exam2Score: 72, 
-    exam3Score: 75, 
-    homeworkH1Score: 80, 
-    homeworkH2Score: 82, 
-    quizH1Score: 70, 
-    quizH2Score: 74 
-  },
-  { 
-    id: 'g5', 
-    studentId: '24105', 
-    chineseName: '李俊杰', 
-    englishName: 'Lee Jun Jie', 
-    classGrade: 'J1U1', 
-    subjectName: '电脑资讯与工艺', 
-    exam1Score: 82, 
-    exam2Score: 85, 
-    exam3Score: 88, 
-    homeworkH1Score: 90, 
-    homeworkH2Score: 88, 
-    quizH1Score: 84, 
-    quizH2Score: 86 
-  },
-  { 
-    id: 'g6', 
-    studentId: '24201', 
-    chineseName: '黄子涵', 
-    englishName: 'Ng Zi Han', 
-    classGrade: 'J1U2', 
-    subjectName: '电脑资讯与工艺', 
-    exam1Score: 90, 
-    exam2Score: 88, 
-    exam3Score: 92, 
-    homeworkH1Score: 95, 
-    homeworkH2Score: 96, 
-    quizH1Score: 88, 
-    quizH2Score: 90 
-  },
-  { 
-    id: 'g7', 
-    studentId: '23201', 
-    chineseName: '周家豪', 
-    englishName: 'Chew Jia Hao', 
-    classGrade: 'J2U2', 
-    subjectName: '电脑资讯与工艺', 
-    exam1Score: 85, 
-    exam2Score: 87, 
-    exam3Score: 89, 
-    homeworkH1Score: 92, 
-    homeworkH2Score: 94, 
-    quizH1Score: 80, 
-    quizH2Score: 85 
-  },
-  { 
-    id: 'g8', 
-    studentId: '22101', 
-    chineseName: '刘宇航', 
-    englishName: 'Lau Yu Hang', 
-    classGrade: 'S1A1', 
-    subjectName: '资讯科技', 
-    exam1Score: 91, 
-    exam2Score: 93, 
-    exam3Score: 94, 
-    homeworkH1Score: 96, 
-    homeworkH2Score: 98, 
-    quizH1Score: 90, 
-    quizH2Score: 92 
-  },
-  { 
-    id: 'g9', 
-    studentId: '21101', 
-    chineseName: '黄俊杰', 
-    englishName: 'Wong Jun Jie', 
-    classGrade: 'S2C1', 
-    subjectName: '资讯科技', 
-    exam1Score: 86, 
-    exam2Score: 88, 
-    exam3Score: 90, 
-    homeworkH1Score: 92, 
-    homeworkH2Score: 94, 
-    quizH1Score: 85, 
-    quizH2Score: 88 
-  }
-];
+export const initialGrades: StudentGrade[] = [];
 
-export const initialHomework: HomeworkSubmission[] = [
-  {
-    id: 'hw1',
-    title: '初中《电脑资讯与工艺》：条件分支趣味猜数游戏设计',
-    course: '电脑资讯与工艺',
-    assignedDate: '2027-03-01',
-    dueDate: '2027-03-12',
-    targetClass: 'J1U1',
-    submittedCount: 42,
-    totalStudents: 45,
-    status: 'pending_review',
-    description: '在 Lab A 完成猜数算法程序，包含上限判定、计数统计与防报错处理。'
-  },
-  {
-    id: 'hw2',
-    title: '高中《资讯科技》：校园网络子网划分方案设计与模拟抓包',
-    course: '资讯科技',
-    assignedDate: '2027-03-05',
-    dueDate: '2027-03-15',
-    targetClass: 'S1A1',
-    submittedCount: 38,
-    totalStudents: 40,
-    status: 'graded',
-    description: '在 Lab C 完成虚拟拓扑搭建，配置 3 个子网并验证各网段互通性。'
-  }
-];
+export const initialHomework: HomeworkSubmission[] = [];
 
 // 符合 9 节课时精准时间表（07:55 - 14:20，每节 35 分钟）
-export const initialTimetable: TimetableSlot[] = [
-  { id: 't1', dayOfWeek: 1, period: 1, timeRange: '07:55 - 08:30', subject: '电脑资讯与工艺 (初中)', subjectType: '电脑资讯与工艺', className: 'J1U1', location: 'Lab A (60座)', teacherName: '黄世泓 (IT老师 / 资讯处助理)', roleType: 'teaching' },
-  { id: 't2', dayOfWeek: 1, period: 2, timeRange: '08:30 - 09:05', subject: '电脑资讯与工艺 (初中)', subjectType: '电脑资讯与工艺', className: 'J1U1', location: 'Lab A (60座)', teacherName: '黄世泓 (IT老师 / 资讯处助理)', roleType: 'teaching' },
-  { id: 't3', dayOfWeek: 1, period: 4, timeRange: '10:15 - 10:50', subject: '资讯处：服务器巡检与机房维护', subjectType: '网络维护', className: '资讯处', location: '核心数据机房 B201', teacherName: '黄世泓 (IT老师 / 资讯处助理)', roleType: 'maintenance' },
-  
-  { id: 't4', dayOfWeek: 2, period: 3, timeRange: '09:40 - 10:15', subject: '资讯科技 (高中)', subjectType: '资讯科技', className: 'S1A2', location: 'Lab C (55座)', teacherName: '黄世泓 (IT老师 / 资讯处助理)', roleType: 'teaching' },
-  { id: 't5', dayOfWeek: 2, period: 5, timeRange: '10:50 - 11:25', subject: '电脑资讯与工艺 (初中)', subjectType: '电脑资讯与工艺', className: 'J2U2', location: 'Lab B (50座)', teacherName: '林慈贤 (IT老师 / 资讯处助理)', roleType: 'teaching' },
-  { id: 't6', dayOfWeek: 2, period: 8, timeRange: '13:10 - 13:45', subject: '资讯处：Lab B 键盘与网络巡视', subjectType: '网络维护', className: '资讯处', location: 'Lab B (50座)', teacherName: '林慈贤 (IT老师 / 资讯处助理)', roleType: 'maintenance' },
+export const initialTimetable: TimetableSlot[] = [];
 
-  { id: 't7', dayOfWeek: 3, period: 1, timeRange: '07:55 - 08:30', subject: '电脑资讯与工艺 (初中)', subjectType: '电脑资讯与工艺', className: 'J1U2', location: 'Lab A (60座)', teacherName: '黄世泓 (IT老师 / 资讯处助理)', roleType: 'teaching' },
-  { id: 't8', dayOfWeek: 3, period: 4, timeRange: '10:15 - 10:50', subject: '资讯处：全校 AP 固件升级与漫游调试', subjectType: '网络维护', className: '资讯处', location: 'Lab B (50座)', teacherName: '林慈贤 (IT老师 / 资讯处助理)', roleType: 'maintenance' },
-  { id: 't9', dayOfWeek: 3, period: 7, timeRange: '12:35 - 13:10', subject: '资讯科技 (高中)', subjectType: '资讯科技', className: 'S2C1', location: 'Lab C (55座)', teacherName: '林慈贤 (IT老师 / 资讯处助理)', roleType: 'teaching' },
-
-  { id: 't10', dayOfWeek: 4, period: 3, timeRange: '09:40 - 10:15', subject: '电脑资讯与工艺 (初中)', subjectType: '电脑资讯与工艺', className: 'J1U3', location: 'Lab A (60座)', teacherName: '黄世泓 (IT老师 / 资讯处助理)', roleType: 'teaching' },
-  { id: 't11', dayOfWeek: 4, period: 6, timeRange: '11:25 - 12:00', subject: '资讯处例行技术排障工作会', subjectType: '网络维护', className: '资讯处', location: '资讯处会议室', teacherName: '黄世泓、林慈贤', roleType: 'maintenance' },
-  
-  { id: 't12', dayOfWeek: 5, period: 2, timeRange: '08:30 - 09:05', subject: '资讯科技 (高中)', subjectType: '资讯科技', className: 'S3SC', location: 'Lab C (55座)', teacherName: '林慈贤 (IT老师 / 资讯处助理)', roleType: 'teaching' },
-  { id: 't13', dayOfWeek: 5, period: 9, timeRange: '13:45 - 14:20', subject: '资讯处：Lab A、Lab B、Lab C 镜像同传与周消毒', subjectType: '网络维护', className: '资讯处', location: 'Lab A / Lab B / Lab C', teacherName: '黄世泓、林慈贤', roleType: 'maintenance' }
-];
-
-export const initialDocuments: SchoolDocument[] = [
-  {
-    id: 'doc1',
-    title: '【空白表单】学校 Lab A / Lab B / Lab C 电脑室与多媒体设备借用审批单',
-    category: 'form',
-    department: '资讯处 / 电脑科',
-    updatedAt: '2027-02-28',
-    fileSize: '48 KB',
-    isTemplate: true,
-    contentTemplate: `【电脑室与电教多媒体设备借用审批表】\n申请部门/学科组：______________\n申请人姓名：______________  联系电话：______________\n借用电脑室：□ Lab A (60座)  □ Lab B (50座)  □ Lab C (55座)\n借用时间：2027 年 ____ 月 ____ 日 第 ____ 节至第 ____ 节 (07:55 - 14:20)\n借用班级：□ 初中(J1U1~J3U11)  □ 高中(S1A1~S3SE)  具体班级：________\n借用事由（课程名称）：□ 电脑资讯与工艺  □ 资讯科技  □ 其它：________\n预计使用学生人数：______ 人\n\n【设备安全规范确认】\n1. 严禁携带各类外食与有色饮料进入电脑室。\n2. 使用完毕必须统一关闭总电源、投影机并规范填写《电脑室使用日志》。\n\n申请人签字：____________   资讯处审核：黄世泓 / 林慈贤  日期：2027/__/__`
-  },
-  {
-    id: 'doc2',
-    title: '【空白表单】学校信息化设备与弱电网络线路故障报修单',
-    category: 'form',
-    department: '资讯处 / 电脑科',
-    updatedAt: '2027-03-01',
-    fileSize: '36 KB',
-    isTemplate: true,
-    contentTemplate: `【校园网络与电脑室设备故障报修单】\n报修科室/班级：____________  报修位置（如 Lab C 12号机）：____________\n报修教师：____________  报修日期：2027/____/____\n故障硬件类别：□ 电脑室学生机  □ 教师讲台主控电脑  □ 投影仪/白板  □ 校园网络/Wi-Fi\n故障现象简述：________________________________________\n\n【资讯处处理栏】\n受理处理人：黄世泓 / 林慈贤 (IT老师 / 资讯处助理)\n维修状态：□ 排障中  □ 已修复  □ 需采购更换备件\n处理记录备注：________________________________  验收人签字：____________`
-  },
-  {
-    id: 'doc3',
-    title: '【规章制度】Lab A、Lab B、Lab C 电脑室安全使用守则与应急处置预案',
-    category: 'regulation',
-    department: '资讯处 / 电脑科',
-    updatedAt: '2027-01-15',
-    fileSize: '1.2 MB',
-    isTemplate: false,
-    contentTemplate: `第一条 总则：为保障初中《电脑资讯与工艺》、高中《资讯科技》教学秩序，特制定本守则。\n第二条 学生上机守则：学生按座号对号入座，严禁私自拔插主机线缆或更改电脑设置。\n第三条 突发断电与应急预案：任课老师需第一时间切断该电脑室总配电箱电闸，引导学生有序疏散。`
-  }
-];
+export const initialDocuments: SchoolDocument[] = [];
 
 // =========================================================================================
 // 2027 年官方完整行事历 (根据所附 OCR 文本与图片 1:1 完整录入，全学年上课日数 195 天)
@@ -772,27 +442,7 @@ export const initialCalendarEvents: CalendarEvent[] = [
   { id: 'c27_1231', title: '2028 新生始业辅导营', date: '2027-12-31', category: 'activity', description: '迎接2028学年初一新生。' }
 ];
 
-export const initialAnnouncements: SchoolAnnouncement[] = [
-  {
-    id: 'a1',
-    title: '【重要通知】Lab A、Lab B、Lab C 统一进行系统镜像同传与还原保护更新',
-    author: '黄世泓',
-    role: 'IT老师 / 资讯处助理',
-    date: '2027-03-08 09:30',
-    pinned: true,
-    type: 'facility',
-    content: '各位教职员工好：本周三（3月12日）晚 20:00，资讯处将对 Lab A（60座）、Lab B（50座）与 Lab C（55座）共 165 台学生电脑执行操作系统补丁更新与还原系统重置。请上《电脑资讯与工艺》和《资讯科技》的任课老师提醒学生保存个人作品至云端，避免数据丢失。',
-    readCount: 142
-  },
-  {
-    id: 'a2',
-    title: '【教学通知】初中《电脑资讯与工艺》及高中《资讯科技》教学进度备忘',
-    author: '林慈贤',
-    role: 'IT老师 / 资讯处助理',
-    date: '2027-03-05 14:15',
-    pinned: true,
-    type: 'teaching',
-    content: '请各位老师在工作台查看最新排课安排：初中阶段课程（J1U1~J3U11）统一使用《电脑资讯与工艺》大纲，高中阶段（S1A1~S3SE）使用《资讯科技》大纲。目前三间电脑室软硬件环境均已完成对应模块配置。',
-    readCount: 215
-  }
-];
+export const initialAnnouncements: SchoolAnnouncement[] = [];
+
+// 教学进度初始记录
+export const initialTeachingProgress: TeachingProgressRecord[] = [];

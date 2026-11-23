@@ -4,15 +4,10 @@ import {
   ChevronLeft, 
   ChevronRight, 
   Plus, 
-  Clock, 
   MapPin, 
-  Bookmark, 
-  AlertCircle,
   List,
   Grid,
-  Info,
   CalendarCheck2,
-  Flag
 } from 'lucide-react';
 import { CalendarEvent } from '../types';
 
@@ -445,7 +440,7 @@ export const SchoolCalendar: React.FC<SchoolCalendarProps> = ({ events, onAddEve
                   <label className="block text-xs font-medium text-slate-600 mb-1">事件分类</label>
                   <select
                     value={newCategory}
-                    onChange={(e) => setNewCategory(e.target.value as any)}
+                    onChange={(e) => setNewCategory(e.target.value as CalendarEvent['category'])}
                     className="w-full text-xs p-2.5 border rounded-lg outline-none bg-white"
                   >
                     <option value="exam">期考 / 测验 / 登分</option>

@@ -1,6 +1,75 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    function memberPath() {
+      return /databases/$(database)/documents/authorized_users/$(request.auth.token.email.lower());
+    }
+
+    function isSuperAdmin() {
+      return signedIn()
+        && exists(memberPath())
+        && get(memberPath()).data.isActive == true
+        && get(memberPath()).data.isSuperAdmin == true;
+    }
+
+    function isActiveMember() {
+      return signedIn()
+        && exists(memberPath())
+        && get(memberPath()).data.isActive == true;
+    }
+
+    // 上传文件的记录：成员可读/新增；上传人或超级管理员可删除；不可修改
+    match /uploaded_documents/{docId} {
+      allow read: if isActiveMember();
+      allow create: if isActiveMember()
+        && request.resource.data.uploadedByEmail == request.auth.token.email.lower()
+        && request.resource.data.sizeBytes is number
+        && request.resource.data.sizeBytes <= 10 * 1024 * 1024;
+      allow delete: if isActiveMember()
+        && (resource.data.uploadedByEmail == request.auth.token.email.lower() || isSuperAdmin());
+      // 仅超级管理员可修改名称/分类/部门，或替换文件（上传人等字段不可改）
+      allow update: if isSuperAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['title', 'category', 'department', 'updatedAt', 'fileName', 'storagePath', 'downloadUrl', 'sizeBytes'])
+        && request.resource.data.sizeBytes is number
+        && request.resource.data.sizeBytes <= 10 * 1024 * 1024;
+    }
+
+    // 教材库中上传的资源：成员可读/新增；上传人或超级管理员可删除；
+    // 任何成员可把下载次数 +1；超级管理员可修改名称/类型/年级或替换文件（上传人不可改）
+    match /uploaded_resources/{resId} {
+      allow read: if isActiveMember();
+      allow create: if isActiveMember()
+        && request.resource.data.file.uploadedByEmail == request.auth.token.email.lower()
+        && request.resource.data.file.sizeBytes is number
+        && request.resource.data.file.sizeBytes <= 10 * 1024 * 1024
+        && request.resource.data.downloadCount == 0;
+      allow update: if isActiveMember()
+        && (
+          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['downloadCount'])
+            && request.resource.data.downloadCount == resource.data.downloadCount + 1)
+          || (isSuperAdmin()
+            && request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['title', 'type', 'gradeLevel', 'subjectCategory', 'fileFormat', 'fileSize', 'uploadedAt', 'file'])
+            && request.resource.data.file.uploadedByEmail == resource.data.file.uploadedByEmail
+            && request.resource.data.file.sizeBytes is number
+            && request.resource.data.file.sizeBytes <= 10 * 1024 * 1024)
+        );
+      allow delete: if isActiveMember()
+        && (resource.data.file.uploadedByEmail == request.auth.token.email.lower() || isSuperAdmin());
+    }
+
+    // 成员名单：本人可读取自己的档案，超级管理员可读取/维护全部
+    match /authorized_users/{email} {
+      allow get: if signedIn() && (request.auth.token.email.lower() == email || isSuperAdmin());
+      allow list, create, update, delete: if isSuperAdmin();
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

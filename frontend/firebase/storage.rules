@@ -1,0 +1,28 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // 仅限学校邮箱域名且已验证邮箱的登录用户
+    // (Storage 规则无法读取命名的 Firestore 数据库，因此这里按域名限制；
+    //  谁能看到/删除记录由 firestore.rules 中的成员名单控制)
+    function isSchoolAccount() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.matches('.*@jitsin-ind[.]edu[.]my');
+    }
+
+    match /documents/{fileName} {
+      allow read: if isSchoolAccount();
+      allow create: if isSchoolAccount()
+        && request.resource.size > 0
+        && request.resource.size <= 10 * 1024 * 1024
+        && fileName.matches('.*[.](pdf|doc|docx|xls|xlsx|ppt|pptx|txt|csv|rtf|odt|ods|odp)');
+      allow delete: if isSchoolAccount();
+      allow update: if false;
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -2,64 +2,53 @@ import { initializeApp } from 'firebase/app';
 import {
   getAuth,
   GoogleAuthProvider,
-  signInWithPopup as firebaseSignInWithPopup,
+  signInWithPopup,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  sendEmailVerification,
+  sendPasswordResetEmail,
   signOut as firebaseSignOut,
   onAuthStateChanged,
-  User as FirebaseUser
+  type User as FirebaseUser,
 } from 'firebase/auth';
-import {
-  getFirestore,
-  doc,
-  getDoc,
-  setDoc
-} from 'firebase/firestore';
-import { AuthorizedUser } from '../types';
+import { getFirestore } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
+import config from '../firebase/config.json';
 
-// PASTE YOUR REAL firebaseConfig FROM FIREBASE CONSOLE (jit-sin-ai) HERE:
-export const firebaseConfig = {
-  apiKey: "YOUR_REAL_API_KEY",
-  authDomain: "jit-sin-ai.firebaseapp.com",
-  projectId: "jit-sin-ai",
-  storageBucket: "jit-sin-ai.firebasestorage.app",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
-};
-
-export const app = initializeApp(firebaseConfig);
+// 配置来自 frontend/firebase/config.json (Firebase Web 配置属于公开信息，安全性由 firestore.rules 保证)
+export const app = initializeApp(config.webAppConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+export const db = getFirestore(app, config.databaseId);
+export const storage = getStorage(app);
 
-export {
-  GoogleAuthProvider,
-  getAuth,
-  getFirestore,
-  doc,
-  getDoc,
-  onAuthStateChanged
-};
+export { onAuthStateChanged };
 export type { FirebaseUser };
 
-export async function signOut(authInstance = auth): Promise<void> {
-  await firebaseSignOut(authInstance);
+/** 弹出 Google 登录窗口。 */
+export async function signInWithGoogle() {
+  const provider = new GoogleAuthProvider();
+  // `hd` only nudges Google's account picker toward the school domain; access is
+  // still enforced by the Firestore authorized_users list and firestore.rules.
+  provider.setCustomParameters({ prompt: 'select_account', hd: 'jitsin-ind.edu.my' });
+  return signInWithPopup(auth, provider);
 }
 
-export async function signInWithPopup(
-  authInstance = auth,
-  provider = new GoogleAuthProvider(),
-  _ignoredInputEmail?: string
-) {
-  return await firebaseSignInWithPopup(authInstance, provider);
+/** 邮箱 + 密码登录。 */
+export async function signInWithEmail(email: string, password: string) {
+  return signInWithEmailAndPassword(auth, email.trim(), password);
 }
 
-// Updates a user document in real Firestore (used by Admin dashboard)
-export async function updateFirestoreUserDoc(email: string, user: AuthorizedUser) {
-  const cleanEmail = email.trim().toLowerCase();
-  await setDoc(
-    doc(db, 'authorized_users', cleanEmail),
-    { ...user, email: cleanEmail },
-    { merge: true }
-  );
+/** 首次使用：创建密码账号并发送邮箱验证邮件（验证后才能登录）。 */
+export async function registerWithEmail(email: string, password: string): Promise<void> {
+  const cred = await createUserWithEmailAndPassword(auth, email.trim(), password);
+  await sendEmailVerification(cred.user);
 }
 
-// Kept for compatibility (real Firebase Auth persists sessions automatically)
-export function setAuthorizedSession(_user: AuthorizedUser) {}
+/** 发送重设密码邮件。 */
+export async function sendPasswordReset(email: string): Promise<void> {
+  await sendPasswordResetEmail(auth, email.trim());
+}
+
+export async function signOut(): Promise<void> {
+  await firebaseSignOut(auth);
+}

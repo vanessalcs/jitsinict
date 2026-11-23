@@ -71,22 +71,6 @@ export async function generateTeachingProgressAdvice(
 }
 
 /**
- * AI 快捷动作：根据各项成绩生成期末针对性评语
- */
-export async function generateStudentGradeComment(studentName: string, scores: {
-  midterm: number;
-  final: number;
-  practice: number;
-  homework: number;
-}): Promise<string> {
-  const prompt = `请为学生「${studentName}」生成一段具体、鼓励性且有针对性的学期信息科技学科评语（约 60-100 字，简体中文）。
-成绩数据：期中考试 ${scores.midterm} 分，期末理论 ${scores.final} 分，上机实操 ${scores.practice} 分，课后作业 ${scores.homework} 分。
-内容应客观分析其理论与编程动手优势，并提出下一步提升建议。请直接输出评语正文。`;
-
-  return askGeminiAssistant(prompt, 'it_teacher');
-}
-
-/**
  * AI 快捷动作：起草规范校园电教与网络通知公告
  */
 export async function generateAnnouncementDraft(topic: string, details: string): Promise<{ title: string; content: string }> {

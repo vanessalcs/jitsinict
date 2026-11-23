@@ -337,7 +337,7 @@ export async function downloadGradeListAsPdfFile(
 
   // 9. 打包为真正的二进制合法 .pdf 文档
   const pdfBytes = buildA4PdfFromJpeg(jpegBytes, canvasWidth, canvasHeight);
-  const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
+  const pdfBlob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' });
 
   // 10. 触发下载为真正带有 .pdf 后缀的本地档案
   const downloadUrl = URL.createObjectURL(pdfBlob);
