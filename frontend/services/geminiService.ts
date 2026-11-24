@@ -29,7 +29,7 @@ export async function askGeminiAssistant(
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.5-flash',
       contents: {
         role: 'user',
         parts: [{ text: prompt }]
@@ -62,7 +62,7 @@ export async function generateAnnouncementDraft(topic: string, details: string):
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.5-flash',
       contents: {
         role: 'user',
         parts: [{ text: prompt }]

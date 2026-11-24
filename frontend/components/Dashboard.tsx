@@ -400,7 +400,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
           </div>
           <span className="self-start sm:self-auto text-[11px] px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
-            gemini-2.5-flash
+            gemini-3.5-flash
           </span>
         </div>
 
