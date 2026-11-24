@@ -218,6 +218,16 @@ export const App: React.FC<AppProps> = ({ authUser, onLogout, onRefreshAuthUser 
         isOpen={isAiModalOpen}
         onClose={() => setIsAiModalOpen(false)}
         role={currentUser.role}
+        userName={currentUser.name}
+        localData={{
+          timetable,
+          calendarEvents,
+          announcements,
+          journals,
+          homework: homeworkList,
+          resources,
+          documents,
+        }}
         initialPrompt={aiModalPrompt}
       />
     </div>

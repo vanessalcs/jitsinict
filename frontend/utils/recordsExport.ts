@@ -9,7 +9,7 @@ export const RECORD_STATUS_LABELS: Record<RecordStatus, string> = {
 
 const todayString = () => new Date().toISOString().split('T')[0];
 
-function triggerDownload(blob: Blob, fileName: string) {
+export function triggerDownload(blob: Blob, fileName: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -45,7 +45,7 @@ export function downloadRecordsAsCsv(records: DepartmentRecord[]): void {
 // PDF：用 Canvas 绘制每一页（中文无需嵌入字体），再把每页 JPEG 打包成多页 A4 横向 PDF。
 // ---------------------------------------------------------------------------
 
-const FONT = '"Microsoft YaHei", "PingFang SC", "Heiti SC", sans-serif';
+export const FONT = '"Microsoft YaHei", "PingFang SC", "Heiti SC", sans-serif';
 const PAGE_W = 2000;
 const PAGE_H = 1414; // A4 横向比例
 const MARGIN = 60;
@@ -62,7 +62,7 @@ const COLUMNS = [
 ];
 
 /** 按像素宽度逐字换行（中英文混排都适用），并保留原有换行。 */
-function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
+export function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
   const lines: string[] = [];
   for (const paragraph of text.split('\n')) {
     let line = '';
@@ -79,7 +79,7 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number)
   return lines;
 }
 
-function canvasToJpegBytes(canvas: HTMLCanvasElement): Uint8Array {
+export function canvasToJpegBytes(canvas: HTMLCanvasElement): Uint8Array {
   const base64 = canvas.toDataURL('image/jpeg', 0.92).split(',')[1];
   const binary = atob(base64);
   const bytes = new Uint8Array(binary.length);
@@ -87,11 +87,14 @@ function canvasToJpegBytes(canvas: HTMLCanvasElement): Uint8Array {
   return bytes;
 }
 
-/** 把若干页 JPEG 打包成多页 A4 横向 PDF。 */
-function buildPdfFromJpegPages(pages: Uint8Array[]): Uint8Array {
+/** 把若干页 JPEG 打包成多页 PDF（默认 A4 横向；可传入像素与 pt 尺寸以生成竖向页面）。 */
+export function buildPdfFromJpegPages(
+  pages: Uint8Array[],
+  size: { pxW: number; pxH: number; ptW: number; ptH: number } = { pxW: PAGE_W, pxH: PAGE_H, ptW: 841.89, ptH: 595.28 }
+): Uint8Array {
   const enc = new TextEncoder();
-  const pw = 841.89;
-  const ph = 595.28;
+  const pw = size.ptW;
+  const ph = size.ptH;
   const chunks: Uint8Array[] = [];
   const offsets: number[] = [];
   let length = 0;
@@ -125,7 +128,7 @@ function buildPdfFromJpegPages(pages: Uint8Array[]): Uint8Array {
     );
     beginObject(imgId);
     push(
-      `${imgId} 0 obj\n<< /Type /XObject /Subtype /Image /Width ${PAGE_W} /Height ${PAGE_H} ` +
+      `${imgId} 0 obj\n<< /Type /XObject /Subtype /Image /Width ${size.pxW} /Height ${size.pxH} ` +
         `/ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpeg.length} >>\nstream\n`
     );
     push(jpeg);

@@ -5,16 +5,26 @@ import {
   Send, 
   Bot, 
   User, 
-  Copy, 
-  Check, 
+  Copy,
+  Check,
+  Download,
 } from 'lucide-react';
-import { UserRole } from '../types';
-import { askGeminiAssistant } from '../services/geminiService';
+import { DepartmentRecord, SchoolDocument, TeachingResource, UserRole } from '../types';
+import { ChatTurn, chatWithAssistant } from '../services/geminiService';
+import { AssistantAppData, buildAppContext } from '../services/assistantContext';
+import { subscribeDepartmentRecords } from '../services/departmentRecords';
+import { subscribeUploadedDocuments } from '../services/documentFiles';
+import { subscribeUploadedResources } from '../services/resourceFiles';
+import { downloadTextAsPdf } from '../utils/textPdf';
+import { notify } from '../utils/toast';
 
 interface GeminiAssistantModalProps {
   isOpen: boolean;
   onClose: () => void;
   role: UserRole;
+  userName: string;
+  /** 保存在本浏览器里的数据（记录、上传文件由弹窗自己实时读取） */
+  localData: Omit<AssistantAppData, 'records'>;
   initialPrompt?: string;
 }
 
@@ -29,9 +39,26 @@ export const GeminiAssistantModal: React.FC<GeminiAssistantModalProps> = ({
   isOpen,
   onClose,
   role,
+  userName,
+  localData,
   initialPrompt,
 }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [records, setRecords] = useState<DepartmentRecord[]>([]);
+  const [uploadedDocs, setUploadedDocs] = useState<SchoolDocument[]>([]);
+  const [uploadedResources, setUploadedResources] = useState<TeachingResource[]>([]);
+
+  // 弹窗打开时，实时读取共享数据（事项记录、已上传文件）
+  useEffect(() => {
+    if (!isOpen) return;
+    const onError = (err: Error) => console.error('助手读取共享数据失败：', err);
+    const unsubs = [
+      subscribeDepartmentRecords(setRecords, onError),
+      subscribeUploadedDocuments(setUploadedDocs, onError),
+      subscribeUploadedResources(setUploadedResources, onError),
+    ];
+    return () => unsubs.forEach((u) => u());
+  }, [isOpen]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -43,9 +70,7 @@ export const GeminiAssistantModal: React.FC<GeminiAssistantModalProps> = ({
         {
           id: 'welcome',
           sender: 'gemini',
-          text: role === 'it_teacher'
-            ? `您好！我是您的信息科技教研 AI 助手 🤖。\n我可以协助您：\n• 智能分析班级教学进度并提供重难点突破策略\n• 设计信息科技期中期末考试题与标准答案\n• 撰写期末学生个性化综合评语\n• 设计 45 分钟微机课完整教案与互动练习\n• 编程作业代码逻辑批改与排错诊断\n请问今天有什么我可以协助您的？`
-            : `您好！我是您的校园网络与信息系统管理员 AI 助手 🛡️。\n我可以协助您：\n• 校园网络故障诊断（DHCP、VLAN、无线 AP、交换机）\n• 机房电教设备日常巡检 SOP 与备份策略规划\n• 起草信息化采购需求、设备借用及安全停网通告\n• 计算机机房网络同传镜像分发与批量还原建议\n请描述您目前遇到的网络或电教设备状况！`,
+          text: `您好！我是资讯处 AI 聊天助手 🤖。\n我可以读取系统里的数据来回答您（学生成绩除外），也可以帮您出题：\n• 查询事项记录，例如「哪些记录这个月到期？」「谁负责过支付相关的事项？」\n• 查看课表、行事历、公告与教学日志\n• 制作练习卷、试题与教案，并可复制或下载成 PDF\n• 协助机房排障、起草通知与文书\n我只能读取数据，不会修改系统内容。请问有什么可以帮您？`,
           time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
         },
       ]);
@@ -80,7 +105,20 @@ export const GeminiAssistantModal: React.FC<GeminiAssistantModalProps> = ({
     setLoading(true);
 
     try {
-      const responseText = await askGeminiAssistant(text, role);
+      // 完整对话历史（不含开场白）+ 本次提问
+      const history: ChatTurn[] = [
+        ...messages
+          .filter((m) => m.id !== 'welcome' && !m.id.startsWith('err_'))
+          .map((m): ChatTurn => ({ role: m.sender === 'user' ? 'user' : 'model', text: m.text })),
+        { role: 'user', text },
+      ];
+      const appContext = buildAppContext({
+        ...localData,
+        records,
+        resources: [...uploadedResources, ...localData.resources],
+        documents: [...uploadedDocs, ...localData.documents],
+      });
+      const responseText = await chatWithAssistant(history, appContext, userName);
       const aiMsg: ChatMessage = {
         id: `a_${Date.now()}`,
         sender: 'gemini',
@@ -107,14 +145,21 @@ export const GeminiAssistantModal: React.FC<GeminiAssistantModalProps> = ({
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const quickSnippets = role === 'it_teacher' ? [
-    '设计 5 道高中 Python 循环选择题附详解',
-    '为进步明显的后进生写 80 字期末评语',
-    '如何帮助初一学生理解双重嵌套循环？',
-  ] : [
-    '机房电脑能连网关但无法访问外网排查步骤',
-    '学校微机室暑假深度保养检修计划书',
-    '核心交换机固件夜间升级停机通知',
+  const handleDownloadPdf = (text: string) => {
+    try {
+      const firstLine = text.split('\n').find((l) => l.trim()) || '练习卷';
+      const title = firstLine.replace(/^#+\s*/, '').replace(/[\\/:*?"<>|]/g, '').trim().slice(0, 30) || '练习卷';
+      downloadTextAsPdf(text, title);
+    } catch (err) {
+      console.error(err);
+      notify('生成 PDF 失败，请改用「复制」。');
+    }
+  };
+
+  const quickSnippets = [
+    '哪些事项记录快到期了？',
+    '这周电脑室的课表是怎样的？',
+    '设计一份 10 题的 Python 循环练习卷并附答案',
   ];
 
   return (
@@ -134,7 +179,7 @@ export const GeminiAssistantModal: React.FC<GeminiAssistantModalProps> = ({
                 </span>
               </div>
               <p className="text-[10px] sm:text-[11px] text-slate-400 truncate">
-                由 Google Gemini 2.5 Flash 驱动
+                由 Google Gemini 3.5 Flash 驱动 · 可读取系统数据（不含学生成绩）
               </p>
             </div>
           </div>
@@ -195,18 +240,30 @@ export const GeminiAssistantModal: React.FC<GeminiAssistantModalProps> = ({
                   >
                     <span>{m.time}</span>
                     {!isUser && (
-                      <button
-                        onClick={() => handleCopy(m.id, m.text)}
-                        className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition hover:text-slate-600 flex items-center gap-1"
-                        title="复制内容"
-                      >
-                        {copiedId === m.id ? (
-                          <Check className="h-3 w-3 text-emerald-600" />
-                        ) : (
-                          <Copy className="h-3 w-3" />
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => handleCopy(m.id, m.text)}
+                          className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition hover:text-slate-600 flex items-center gap-1"
+                          title="复制内容"
+                        >
+                          {copiedId === m.id ? (
+                            <Check className="h-3 w-3 text-emerald-600" />
+                          ) : (
+                            <Copy className="h-3 w-3" />
+                          )}
+                          <span>{copiedId === m.id ? '已复制' : '复制'}</span>
+                        </button>
+                        {m.id !== 'welcome' && (
+                          <button
+                            onClick={() => handleDownloadPdf(m.text)}
+                            className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition hover:text-slate-600 flex items-center gap-1"
+                            title="下载为 PDF"
+                          >
+                            <Download className="h-3 w-3" />
+                            <span>下载 PDF</span>
+                          </button>
                         )}
-                        <span>{copiedId === m.id ? '已复制' : '复制'}</span>
-                      </button>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -241,7 +298,7 @@ export const GeminiAssistantModal: React.FC<GeminiAssistantModalProps> = ({
               type="text"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              placeholder="输入消息，与 Gemini 探讨教学进度、备课出题或机房排障..."
+              placeholder="询问系统里的数据、让它出练习卷，或探讨机房排障..."
               className="flex-1 text-xs sm:text-sm p-2.5 sm:p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:bg-white focus:ring-2 focus:ring-sky-500"
             />
             <button

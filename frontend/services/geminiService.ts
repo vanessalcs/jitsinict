@@ -47,6 +47,47 @@ export async function askGeminiAssistant(
   }
 }
 
+export interface ChatTurn {
+  role: 'user' | 'model';
+  text: string;
+}
+
+/**
+ * 聊天助手：带完整对话历史，并可参考应用里的数据（只读，不含学生成绩）。
+ */
+export async function chatWithAssistant(
+  history: ChatTurn[],
+  appContext: string,
+  userName: string
+): Promise<string> {
+  const systemInstruction = `你是日新独立中学「资讯处 / 电脑科」的 AI 聊天助手，正在和老师「${userName}」对话。
+你的职责：
+1. 回答关于下方【系统数据】的问题（事项记录、课表、行事历、公告、教学日志、教材目录等）。回答要以数据为准，引用日期、负责人等具体信息；数据里没有的内容，直接说「系统数据里没有这项信息」，不要编造。
+2. 制作练习卷、试题、教案、课件大纲等教学材料。练习卷请写成可直接打印的格式：标题、班级姓名日期栏、分题型分题号、标明分值，答案与解析放在最后单独的「参考答案」部分，除非老师说不要。
+3. 协助校园网络、机房与电教设备的排障，以及起草通知、工单、采购说明等文书。
+回答规范：使用简体中文；排版简洁，可用「# 标题」「- 列表」，不要使用表格和 Markdown 加粗符号 ** ；老师追问时，要结合前面的对话。
+你只能读取数据，不能修改系统里的任何内容；如果老师要求新增或修改记录，请告诉老师需要自己在对应页面操作。
+你看不到学生成绩，也看不到上传文件的内容，只知道文件名等目录信息。
+
+【系统数据】
+${appContext}`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.5-flash',
+      contents: history.map((turn) => ({ role: turn.role, parts: [{ text: turn.text }] })),
+      config: {
+        systemInstruction,
+        temperature: 0.4,
+      },
+    });
+    return response.text || '（AI 暂无返回内容）';
+  } catch (error: any) {
+    console.error('Gemini API Error:', error);
+    return `抱歉，在与 Gemini 智能引擎通信时发生异常：${error?.message || '未知错误'}。`;
+  }
+}
+
 /**
  * AI 快捷动作：起草规范校园电教与网络通知公告
  */
