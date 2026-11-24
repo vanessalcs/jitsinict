@@ -198,7 +198,7 @@ export const ManageAccess: React.FC<ManageAccessProps> = ({
       {/* 头部标题 */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <h2 className="text-lg sm:text-xl font-bold text-slate-900 flex items-center gap-2">
               <ShieldCheck className="h-5 w-5 sm:h-6 sm:w-6 text-indigo-600" />
               <span>10 人成员团队权限管理 (Manage 10-Member Access)</span>
@@ -214,7 +214,7 @@ export const ManageAccess: React.FC<ManageAccessProps> = ({
 
         <button
           onClick={() => setShowAddModal(true)}
-          className="self-start sm:self-auto flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-sm transition"
+          className="self-start sm:self-auto shrink-0 whitespace-nowrap flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-sm transition"
         >
           <Plus className="h-4 w-4" />
           <span>添加新成员档案</span>
@@ -230,183 +230,164 @@ export const ManageAccess: React.FC<ManageAccessProps> = ({
         </div>
       </div>
 
-      {/* 成员权限控制大表格 */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-700">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold">
-              <tr>
-                <th className="p-3.5">教职员姓名 / 职称</th>
-                <th className="p-3.5">Google 邮箱 (小写)</th>
-                <th className="p-3.5 text-center">账号激活 (isActive)</th>
-                <th className="p-3.5 text-center">发公告 (canPost)</th>
-                <th className="p-3.5 text-center">发评论 (canComment)</th>
-                <th className="p-3.5 text-center">超管 (isSuperAdmin)</th>
-                <th className="p-3.5">允许查看的报表权限 (allowedReports)</th>
-                <th className="p-3.5 text-right">操作</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {loading && (
-                <tr>
-                  <td colSpan={8} className="p-6 text-center text-slate-400">正在加载成员名单…</td>
-                </tr>
-              )}
-              {users.map((u) => {
-                const isEditing = editingEmail === u.email;
-
-                return (
-                  <tr key={u.email} className="hover:bg-slate-50/70 transition">
-                    {/* 姓名与职称 */}
-                    <td className="p-3.5">
-                      <div className="flex items-center gap-2.5">
-                        <div className={`h-8 w-8 rounded-full bg-gradient-to-tr ${u.avatarColor} text-white font-bold text-xs flex items-center justify-center shrink-0`}>
-                          {u.name.slice(0, 1)}
-                        </div>
-                        <div>
-                          {isEditing ? (
-                            <input
-                              type="text"
-                              value={editDraft.name}
-                              onChange={(e) => setEditDraft({ ...editDraft, name: e.target.value })}
-                              className="p-1 border rounded text-xs font-bold w-24 bg-white"
-                            />
-                          ) : (
-                            <div className="font-bold text-slate-900 text-sm">{u.name}</div>
-                          )}
-                          <div className="text-[11px] text-slate-400">{u.title} · {u.department}</div>
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* 邮箱 (统一小写) */}
-                    <td className="p-3.5 font-mono text-xs text-slate-600">
-                      {u.email}
-                    </td>
-
-                    {/* isActive 状态开关 */}
-                    <td className="p-3.5 text-center">
-                      <button
-                        onClick={() => handleToggleActive(u.email)}
-                        className={`px-2.5 py-1 rounded-full text-xs font-bold transition ${
-                          u.isActive
-                            ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
-                            : 'bg-rose-100 text-rose-800 hover:bg-rose-200'
-                        }`}
-                        title="点击切换启用/停用"
-                      >
-                        {u.isActive ? '已激活' : '已停用'}
-                      </button>
-                    </td>
-
-                    {/* canPostAnnouncements 开关 */}
-                    <td className="p-3.5 text-center">
-                      <button
-                        onClick={() => handleToggleCanPost(u.email)}
-                        className={`px-2.5 py-1 rounded-full text-xs font-bold transition ${
-                          u.canPostAnnouncements
-                            ? 'bg-sky-100 text-sky-800 hover:bg-sky-200'
-                            : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
-                        }`}
-                        title="点击切换是否允许发布公告"
-                      >
-                        {u.canPostAnnouncements ? '允许发公告' : '仅浏览'}
-                      </button>
-                    </td>
-
-                    {/* canComment 开关 */}
-                    <td className="p-3.5 text-center">
-                      <button
-                        onClick={() => handleToggleCanComment(u.email)}
-                        className={`px-2.5 py-1 rounded-full text-xs font-bold transition ${
-                          u.canComment
-                            ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
-                            : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
-                        }`}
-                        title="点击切换是否允许在公告下评论"
-                      >
-                        {u.canComment ? '允许评论' : '禁止评论'}
-                      </button>
-                    </td>
-
-                    {/* isSuperAdmin 开关 */}
-                    <td className="p-3.5 text-center">
-                      <button
-                        onClick={() => handleToggleSuperAdmin(u.email)}
-                        className={`px-2.5 py-1 rounded-full text-xs font-bold transition ${
-                          u.isSuperAdmin
-                            ? 'bg-indigo-100 text-indigo-800 hover:bg-indigo-200'
-                            : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-                        }`}
-                        title="点击切换超级管理员权限"
-                      >
-                        {u.isSuperAdmin ? '超级管理员' : '普通成员'}
-                      </button>
-                    </td>
-
-                    {/* allowedReports 报表权限标签 */}
-                    <td className="p-3.5 max-w-xs">
-                      {isEditing ? (
-                        <div className="space-y-1 bg-slate-50 p-2 rounded-xl border border-slate-200">
-                          {AVAILABLE_REPORTS.map((r) => {
-                            const isChecked = (editDraft.allowedReports || []).includes(r.id);
-                            return (
-                              <label key={r.id} className="flex items-center gap-1.5 cursor-pointer text-[11px]">
-                                <input
-                                  type="checkbox"
-                                  checked={isChecked}
-                                  onChange={() => handleToggleReportPermission(r.id)}
-                                  className="rounded text-indigo-600 h-3.5 w-3.5"
-                                />
-                                <span>{r.label}</span>
-                              </label>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        <div className="flex flex-wrap gap-1">
-                          {u.allowedReports.length === 0 ? (
-                            <span className="text-slate-400 text-[11px]">无报表权限</span>
-                          ) : (
-                            u.allowedReports.map((rid) => {
-                              const found = AVAILABLE_REPORTS.find(r => r.id === rid);
-                              return (
-                                <span key={rid} className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-medium border border-slate-200">
-                                  {found ? found.label.slice(0, 6) : rid}
-                                </span>
-                              );
-                            })
-                          )}
-                        </div>
-                      )}
-                    </td>
-
-                    {/* 编辑与保存 */}
-                    <td className="p-3.5 text-right whitespace-nowrap">
-                      {isEditing ? (
-                        <button
-                          onClick={() => handleSaveEdit(u.email)}
-                          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium text-xs inline-flex items-center gap-1 shadow-sm"
-                        >
-                          <Check className="h-3 w-3" />
-                          <span>保存</span>
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => handleStartEdit(u)}
-                          className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium inline-flex items-center gap-1 transition"
-                        >
-                          <Edit3 className="h-3 w-3 text-slate-500" />
-                          <span>配置</span>
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+      {/* 成员权限卡片（平板与手机上比大表格更易读、无需横向滚动） */}
+      {loading && (
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 text-center text-xs text-slate-400">
+          正在加载成员名单…
         </div>
+      )}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+        {users.map((u) => {
+          const isEditing = editingEmail === u.email;
+
+          return (
+            <div key={u.email} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-3.5">
+              {/* 头部：头像、姓名、职称与编辑按钮 */}
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3 min-w-0">
+                  <div className={`h-10 w-10 rounded-full bg-gradient-to-tr ${u.avatarColor} text-white font-bold text-sm flex items-center justify-center shrink-0`}>
+                    {u.name.slice(0, 1)}
+                  </div>
+                  <div className="min-w-0">
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={editDraft.name}
+                        onChange={(e) => setEditDraft({ ...editDraft, name: e.target.value })}
+                        className="p-1 border rounded text-sm font-bold w-32 bg-white"
+                      />
+                    ) : (
+                      <div className="font-bold text-slate-900 text-sm sm:text-base">{u.name}</div>
+                    )}
+                    <div className="text-xs text-slate-500 mt-0.5">{u.title}</div>
+                    <div className="text-[11px] text-slate-400">{u.department}</div>
+                  </div>
+                </div>
+
+                {isEditing ? (
+                  <button
+                    onClick={() => handleSaveEdit(u.email)}
+                    className="shrink-0 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium text-xs inline-flex items-center gap-1 shadow-sm"
+                  >
+                    <Check className="h-3 w-3" />
+                    <span>保存</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleStartEdit(u)}
+                    className="shrink-0 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium inline-flex items-center gap-1 transition"
+                  >
+                    <Edit3 className="h-3 w-3 text-slate-500" />
+                    <span>配置</span>
+                  </button>
+                )}
+              </div>
+
+              {/* 邮箱 (统一小写) */}
+              <div className="font-mono text-xs text-slate-600 break-all bg-slate-50 rounded-lg px-2.5 py-1.5">
+                {u.email}
+              </div>
+
+              {/* 四个权限开关 */}
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <div className="text-[11px] text-slate-400 mb-1">账号激活 (isActive)</div>
+                  <button
+                    onClick={() => handleToggleActive(u.email)}
+                    className={`w-full px-2.5 py-1.5 rounded-lg text-xs font-bold transition ${
+                      u.isActive
+                        ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                        : 'bg-rose-100 text-rose-800 hover:bg-rose-200'
+                    }`}
+                    title="点击切换启用/停用"
+                  >
+                    {u.isActive ? '已激活' : '已停用'}
+                  </button>
+                </div>
+                <div>
+                  <div className="text-[11px] text-slate-400 mb-1">发公告 (canPost)</div>
+                  <button
+                    onClick={() => handleToggleCanPost(u.email)}
+                    className={`w-full px-2.5 py-1.5 rounded-lg text-xs font-bold transition ${
+                      u.canPostAnnouncements
+                        ? 'bg-sky-100 text-sky-800 hover:bg-sky-200'
+                        : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
+                    }`}
+                    title="点击切换是否允许发布公告"
+                  >
+                    {u.canPostAnnouncements ? '允许发公告' : '仅浏览'}
+                  </button>
+                </div>
+                <div>
+                  <div className="text-[11px] text-slate-400 mb-1">发评论 (canComment)</div>
+                  <button
+                    onClick={() => handleToggleCanComment(u.email)}
+                    className={`w-full px-2.5 py-1.5 rounded-lg text-xs font-bold transition ${
+                      u.canComment
+                        ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                        : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
+                    }`}
+                    title="点击切换是否允许在公告下评论"
+                  >
+                    {u.canComment ? '允许评论' : '禁止评论'}
+                  </button>
+                </div>
+                <div>
+                  <div className="text-[11px] text-slate-400 mb-1">超管 (isSuperAdmin)</div>
+                  <button
+                    onClick={() => handleToggleSuperAdmin(u.email)}
+                    className={`w-full px-2.5 py-1.5 rounded-lg text-xs font-bold transition ${
+                      u.isSuperAdmin
+                        ? 'bg-indigo-100 text-indigo-800 hover:bg-indigo-200'
+                        : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                    }`}
+                    title="点击切换超级管理员权限"
+                  >
+                    {u.isSuperAdmin ? '超级管理员' : '普通成员'}
+                  </button>
+                </div>
+              </div>
+
+              {/* 报表权限 */}
+              <div>
+                <div className="text-[11px] text-slate-400 mb-1">允许查看的报表权限 (allowedReports)</div>
+                {isEditing ? (
+                  <div className="space-y-1.5 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                    {AVAILABLE_REPORTS.map((r) => {
+                      const isChecked = (editDraft.allowedReports || []).includes(r.id);
+                      return (
+                        <label key={r.id} className="flex items-center gap-2 cursor-pointer text-xs">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => handleToggleReportPermission(r.id)}
+                            className="rounded text-indigo-600 h-4 w-4"
+                          />
+                          <span>{r.label}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5">
+                    {u.allowedReports.length === 0 ? (
+                      <span className="text-slate-400 text-xs">无报表权限</span>
+                    ) : (
+                      u.allowedReports.map((rid) => {
+                        const found = AVAILABLE_REPORTS.find((r) => r.id === rid);
+                        return (
+                          <span key={rid} className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[11px] font-medium border border-slate-200">
+                            {found ? found.label : rid}
+                          </span>
+                        );
+                      })
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* 模态框：添加新成员档案 */}

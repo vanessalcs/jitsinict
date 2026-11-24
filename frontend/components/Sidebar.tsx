@@ -27,6 +27,8 @@ interface SidebarProps {
   onLogout: () => void;
   isOpenMobile: boolean;
   onCloseMobile: () => void;
+  /** 平板/桌面宽度下是否收起为图标栏（手机抽屉不受影响） */
+  collapsed: boolean;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -38,7 +40,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onLogout,
   isOpenMobile,
   onCloseMobile,
+  collapsed,
 }) => {
+  // 仅在 lg 及以上生效的「收起」样式
+  const hideWhenCollapsed = collapsed ? 'lg:hidden' : '';
   const navItems = [
     { id: 'dashboard', label: '工作台总览', icon: LayoutDashboard },
     { id: 'journal', label: '教室教学日志', icon: BookOpenCheck },
@@ -75,17 +80,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* 侧边栏主体 */}
       <aside
-        className={`fixed lg:static top-0 bottom-0 left-0 z-50 w-72 sm:w-64 bg-slate-900 text-slate-200 flex flex-col shrink-0 border-r border-slate-800 transition-transform duration-300 ease-in-out shadow-2xl lg:shadow-none ${
+        className={`fixed lg:static top-0 bottom-0 left-0 z-50 w-72 sm:w-64 ${collapsed ? 'lg:w-[4.5rem]' : ''} bg-slate-900 text-slate-200 flex flex-col shrink-0 border-r border-slate-800 transition-transform duration-300 ease-in-out shadow-2xl lg:shadow-none ${
           isOpenMobile ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
       >
         {/* 品牌标识：资讯处 / 电脑科 */}
-        <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between">
+        <div className={`p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between ${collapsed ? 'lg:justify-center lg:px-2' : ''}`}>
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-sky-500/20 shrink-0">
               <Monitor className="h-6 w-6" />
             </div>
-            <div>
+            <div className={hideWhenCollapsed}>
               <h1 className="font-bold text-white text-base tracking-wide flex items-center gap-1.5">
                 资讯处 / 电脑科
               </h1>
@@ -102,15 +107,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* 当前登录教师卡片 */}
-        <div className="p-3.5 mx-3 my-3 bg-slate-800/80 rounded-xl border border-slate-700/60">
-          <div className="text-xs mb-2">
+        <div className={`p-3.5 mx-3 my-3 bg-slate-800/80 rounded-xl border border-slate-700/60 ${collapsed ? 'lg:mx-2 lg:p-2' : ''}`}>
+          <div className={`text-xs mb-2 ${hideWhenCollapsed}`}>
             <span className="text-slate-400">当前教职员</span>
           </div>
-          <div className="flex items-center gap-2.5">
+          <div className={`flex items-center gap-2.5 ${collapsed ? 'lg:justify-center' : ''}`} title={collapsed ? `${currentUser.name}（${currentUser.title}）` : undefined}>
             <div className={`h-8 w-8 rounded-lg bg-gradient-to-tr ${currentUser.avatarColor} flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-sm`}>
               {currentUser.name.slice(0, 1)}
             </div>
-            <div className="min-w-0">
+            <div className={`min-w-0 ${hideWhenCollapsed}`}>
               <div className="text-sm font-semibold text-white truncate">
                 {currentUser.name}
               </div>
@@ -122,8 +127,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* 导航菜单列表 */}
-        <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
-          <div className="px-3 pt-2 pb-1 text-xs font-semibold text-slate-400 tracking-wider uppercase">
+        <nav className={`flex-1 px-3 space-y-1 overflow-y-auto ${collapsed ? 'lg:px-2' : ''}`}>
+          <div className={`px-3 pt-2 pb-1 text-xs font-semibold text-slate-400 tracking-wider uppercase ${hideWhenCollapsed}`}>
             功能菜单
           </div>
           {navItems.map((item) => {
@@ -133,40 +138,45 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <button
                 key={item.id}
                 onClick={() => handleSelectTab(item.id)}
+                title={collapsed ? item.label : undefined}
                 className={`w-full flex items-center gap-3 px-3.5 py-2.5 sm:py-3 rounded-xl text-sm font-medium transition-all ${
+                  collapsed ? 'lg:justify-center lg:px-0' : ''
+                } ${
                   isActive
                     ? 'bg-sky-600 text-white shadow-sm shadow-sky-600/30'
                     : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                 }`}
               >
-                <Icon className={`h-5 w-5 ${isActive ? 'text-white' : 'text-slate-400'}`} />
-                <span>{item.label}</span>
+                <Icon className={`h-5 w-5 shrink-0 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                <span className={hideWhenCollapsed}>{item.label}</span>
               </button>
             );
           })}
         </nav>
 
         {/* Gemini AI 助手调用按钮 */}
-        <div className="p-4 border-t border-slate-800">
+        <div className={`p-4 border-t border-slate-800 ${collapsed ? 'lg:p-2' : ''}`}>
           <button
             onClick={() => {
               onOpenAiModal();
               onCloseMobile();
             }}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 text-white font-medium text-sm shadow-lg shadow-indigo-500/25 hover:opacity-95 transition-all active:scale-[0.98]"
+            title={collapsed ? 'Gemini AI 助手' : undefined}
+            className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 text-white font-medium text-sm shadow-lg shadow-indigo-500/25 hover:opacity-95 transition-all active:scale-[0.98] ${collapsed ? 'lg:px-0' : ''}`}
           >
-            <Bot className="h-5 w-5 text-sky-200 animate-pulse" />
-            <span>Gemini AI 助手</span>
+            <Bot className="h-5 w-5 text-sky-200 animate-pulse shrink-0" />
+            <span className={hideWhenCollapsed}>Gemini AI 助手</span>
           </button>
-          <p className="text-[11px] text-center text-slate-400 mt-2">
+          <p className={`text-[11px] text-center text-slate-400 mt-2 ${hideWhenCollapsed}`}>
             教学日志备课 · 试卷课件 · 维修排障
           </p>
           <button
             onClick={onLogout}
-            className="w-full mt-3 flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs text-slate-300 hover:text-white hover:bg-slate-800 transition"
+            title={collapsed ? '退出登录' : undefined}
+            className={`w-full mt-3 flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs text-slate-300 hover:text-white hover:bg-slate-800 transition ${collapsed ? 'lg:px-0' : ''}`}
           >
-            <LogOut className="h-4 w-4" />
-            <span>退出登录</span>
+            <LogOut className="h-4 w-4 shrink-0" />
+            <span className={hideWhenCollapsed}>退出登录</span>
           </button>
         </div>
       </aside>

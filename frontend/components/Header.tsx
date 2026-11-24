@@ -1,14 +1,16 @@
 import React from 'react';
-import { Sparkles, Calendar, Menu, Database } from 'lucide-react';
+import { Sparkles, Calendar, Menu, Database, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { TeacherUser } from '../types';
 
 interface HeaderProps {
   currentUser: TeacherUser;
   onOpenAi: () => void;
   onOpenMenu: () => void;
+  sidebarCollapsed: boolean;
+  onToggleSidebar: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ currentUser, onOpenAi, onOpenMenu }) => {
+export const Header: React.FC<HeaderProps> = ({ currentUser, onOpenAi, onOpenMenu, sidebarCollapsed, onToggleSidebar }) => {
   const now = new Date();
   const weekdayNames = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
   const formattedDate = `${now.getMonth() + 1}月${now.getDate()}日 ${weekdayNames[now.getDay()]}`;
@@ -23,6 +25,16 @@ export const Header: React.FC<HeaderProps> = ({ currentUser, onOpenAi, onOpenMen
           aria-label="打开导航菜单"
         >
           <Menu className="h-5 w-5" />
+        </button>
+
+        {/* 平板/桌面：收起或展开左侧菜单 */}
+        <button
+          onClick={onToggleSidebar}
+          className="hidden lg:inline-flex p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+          aria-label={sidebarCollapsed ? '展开左侧菜单' : '收起左侧菜单'}
+          title={sidebarCollapsed ? '展开左侧菜单' : '收起左侧菜单'}
+        >
+          {sidebarCollapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
         </button>
 
         <div className="flex items-center gap-1.5 sm:gap-2 text-slate-600 text-xs sm:text-sm truncate">

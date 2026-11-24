@@ -93,6 +93,8 @@ export const App: React.FC<AppProps> = ({ authUser, onLogout, onRefreshAuthUser 
 
   // 抽屉与弹窗状态
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  // 平板/桌面宽度下左侧菜单是否收起为图标栏（记住上次选择）
+  const [sidebarCollapsed, setSidebarCollapsed] = useLocalStorage<boolean>('eduit_sidebar_collapsed_v1', false);
 
   // Gemini 智能助理弹窗
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
@@ -122,6 +124,7 @@ export const App: React.FC<AppProps> = ({ authUser, onLogout, onRefreshAuthUser 
         onLogout={onLogout}
         isOpenMobile={isMobileMenuOpen}
         onCloseMobile={() => setIsMobileMenuOpen(false)}
+        collapsed={sidebarCollapsed}
       />
 
       {/* 主界面内容区 */}
@@ -130,6 +133,8 @@ export const App: React.FC<AppProps> = ({ authUser, onLogout, onRefreshAuthUser 
           currentUser={currentUser}
           onOpenAi={() => openAi()}
           onOpenMenu={() => setIsMobileMenuOpen(true)}
+          sidebarCollapsed={sidebarCollapsed}
+          onToggleSidebar={() => setSidebarCollapsed((prev) => !prev)}
         />
 
         {/* 滚动工作区 */}
