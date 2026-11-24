@@ -48,29 +48,6 @@ export async function askGeminiAssistant(
 }
 
 /**
- * 智能生成教学进度分析与下阶段授课提升策略
- */
-export async function generateTeachingProgressAdvice(
-  courseName: string,
-  className: string,
-  unitName: string,
-  masteryRate: number,
-  keyConcepts: string[],
-  reflection: string
-): Promise<string> {
-  const prompt = `课程名称：${courseName}
-授课班级：${className}
-当前教学单元：${unitName}
-全班核心重难点掌握度预估：${masteryRate}%
-单元核心知识点：${keyConcepts.join('、')}
-教师课后手记反思：${reflection}
-
-请根据中学信息技术新课标要求，从“重难点针对性强化手段”、“分层异步教学分流”、“下节课课堂 5 分钟速测题目（2道）”三个维度，提供精准、可落地的智能教学优化建议（约 200-300 字，简练专业）。`;
-
-  return askGeminiAssistant(prompt, 'it_teacher');
-}
-
-/**
  * AI 快捷动作：起草规范校园电教与网络通知公告
  */
 export async function generateAnnouncementDraft(topic: string, details: string): Promise<{ title: string; content: string }> {

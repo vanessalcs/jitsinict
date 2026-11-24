@@ -64,6 +64,30 @@ service cloud.firestore {
         && (resource.data.file.uploadedByEmail == request.auth.token.email.lower() || isSuperAdmin());
     }
 
+    // 资讯处事项记录：成员可读/新增（记录者必须是本人）；
+    // 记录者本人或超级管理员可修改、删除；记录者字段不可更改
+    match /department_records/{recordId} {
+      function validRecord() {
+        return request.resource.data.content is string
+          && request.resource.data.content.size() > 0
+          && request.resource.data.content.size() <= 5000
+          && request.resource.data.status in ['none', 'pending', 'doing', 'done']
+          && request.resource.data.date is string
+          && request.resource.data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+      }
+      allow read: if isActiveMember();
+      allow create: if isActiveMember()
+        && request.resource.data.recorderEmail == request.auth.token.email.lower()
+        && validRecord();
+      allow update: if isActiveMember()
+        && (resource.data.recorderEmail == request.auth.token.email.lower() || isSuperAdmin())
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['date', 'content', 'handlers', 'status', 'tag', 'expiryDate', 'note'])
+        && validRecord();
+      allow delete: if isActiveMember()
+        && (resource.data.recorderEmail == request.auth.token.email.lower() || isSuperAdmin());
+    }
+
     // 成员名单：本人可读取自己的档案，超级管理员可读取/维护全部
     match /authorized_users/{email} {
       allow get: if signedIn() && (request.auth.token.email.lower() == email || isSuperAdmin());

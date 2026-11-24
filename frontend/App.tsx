@@ -9,8 +9,7 @@ import {
   SchoolAnnouncement,
   TeacherUser,
   TeachingResource,
-  TeachingJournalEntry,
-  TeachingProgressRecord
+  TeachingJournalEntry
 } from './types';
 import {
   initialGrades,
@@ -21,15 +20,14 @@ import {
   initialAnnouncements,
   initialTeachers,
   initialTeachingResources,
-  initialTeachingJournals,
-  initialTeachingProgress
+  initialTeachingJournals
 } from './data/initialData';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { Dashboard } from './components/Dashboard';
 import { TeachingJournal } from './components/TeachingJournal';
-import { TeachingProgress } from './components/TeachingProgress';
+import { DepartmentRecords } from './components/DepartmentRecords';
 import { ResourceHub } from './components/ResourceHub';
 import { GradeManager } from './components/GradeManager';
 import { Timetable } from './components/Timetable';
@@ -39,7 +37,6 @@ import { AnnouncementCenter } from './components/AnnouncementCenter';
 import { ManageAccess } from './components/ManageAccess';
 import { FileManager } from './components/FileManager';
 import { GeminiAssistantModal } from './components/GeminiAssistantModal';
-import { UserSwitchModal } from './components/UserSwitchModal';
 
 interface AppProps {
   /** 已通过 Firestore 授权校验的登录成员 */
@@ -66,13 +63,7 @@ export const App: React.FC<AppProps> = ({ authUser, onLogout, onRefreshAuthUser 
     });
   }, [setTeachers]);
 
-  // 当前所选教师档案：按登录邮箱分别记忆，避免不同账号互相继承选择
-  const [currentUserId, setCurrentUserId] = useLocalStorage<string | null>(
-    `eduit_current_user_id_v5:${authUser.email}`,
-    null
-  );
-
-  // 登录成员对应的默认教师档案（名单内没有同邮箱档案时，按授权信息即时生成）
+  // 登录成员对应的教师档案（名单内没有同邮箱档案时，按授权信息即时生成）
   const authAsTeacher = useMemo<TeacherUser>(
     () =>
       teachers.find((t) => t.email.toLowerCase() === authUser.email.toLowerCase()) ?? {
@@ -88,11 +79,10 @@ export const App: React.FC<AppProps> = ({ authUser, onLogout, onRefreshAuthUser 
     [teachers, authUser]
   );
 
-  const currentUser: TeacherUser = teachers.find((t) => t.id === currentUserId) ?? authAsTeacher;
+  const currentUser: TeacherUser = authAsTeacher;
 
   // 业务数据（自动持久化到 localStorage）
   const [journals, setJournals] = useLocalStorage<TeachingJournalEntry[]>('eduit_teaching_journals_v5', initialTeachingJournals);
-  const [progressList, setProgressList] = useLocalStorage<TeachingProgressRecord[]>('eduit_teaching_progress_v1', initialTeachingProgress);
   const [resources, setResources] = useLocalStorage<TeachingResource[]>('eduit_resources_v5', initialTeachingResources);
   const [grades, setGrades] = useLocalStorage<StudentGrade[]>('eduit_grades_v5', initialGrades);
   const [homeworkList, setHomeworkList] = useLocalStorage<HomeworkSubmission[]>('eduit_homework_v5', initialHomework);
@@ -103,7 +93,6 @@ export const App: React.FC<AppProps> = ({ authUser, onLogout, onRefreshAuthUser 
 
   // 抽屉与弹窗状态
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
 
   // Gemini 智能助理弹窗
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
@@ -129,7 +118,6 @@ export const App: React.FC<AppProps> = ({ authUser, onLogout, onRefreshAuthUser 
         onTabChange={setCurrentTab}
         currentUser={currentUser}
         isSuperAdmin={authUser.isSuperAdmin}
-        onOpenUserModal={() => setIsUserModalOpen(true)}
         onOpenAiModal={() => openAi()}
         onLogout={onLogout}
         isOpenMobile={isMobileMenuOpen}
@@ -142,7 +130,6 @@ export const App: React.FC<AppProps> = ({ authUser, onLogout, onRefreshAuthUser 
           currentUser={currentUser}
           onOpenAi={() => openAi()}
           onOpenMenu={() => setIsMobileMenuOpen(true)}
-          onOpenUserModal={() => setIsUserModalOpen(true)}
         />
 
         {/* 滚动工作区 */}
@@ -162,15 +149,6 @@ export const App: React.FC<AppProps> = ({ authUser, onLogout, onRefreshAuthUser 
               journals={journals}
               currentUser={currentUser}
               onAddJournal={(entry) => setJournals((prev) => [entry, ...prev])}
-            />
-          )}
-
-          {currentTab === 'progress' && (
-            <TeachingProgress
-              progressList={progressList}
-              currentUser={currentUser}
-              onAddRecord={(rec) => setProgressList((prev) => [rec, ...prev])}
-              onUpdateRecord={(rec) => setProgressList((prev) => prev.map((r) => (r.id === rec.id ? rec : r)))}
             />
           )}
 
@@ -225,6 +203,8 @@ export const App: React.FC<AppProps> = ({ authUser, onLogout, onRefreshAuthUser 
             />
           )}
 
+          {currentTab === 'records' && <DepartmentRecords authUser={authUser} />}
+
           {currentTab === 'files' && authUser.isSuperAdmin && <FileManager />}
 
           {currentTab === 'access' && authUser.isSuperAdmin && (
@@ -232,16 +212,6 @@ export const App: React.FC<AppProps> = ({ authUser, onLogout, onRefreshAuthUser 
           )}
         </main>
       </div>
-
-      {/* 教师档案切换与管理弹窗 */}
-      <UserSwitchModal
-        isOpen={isUserModalOpen}
-        onClose={() => setIsUserModalOpen(false)}
-        currentUser={currentUser}
-        teachers={teachers}
-        onSelectUser={(user) => setCurrentUserId(user.id)}
-        onAddUser={(newTeacher) => setTeachers((prev) => [...prev, newTeacher])}
-      />
 
       {/* Gemini AI 智能助手弹窗 */}
       <GeminiAssistantModal

@@ -9,10 +9,9 @@ import {
   Bot, 
   BookMarked,
   BookOpenCheck,
+  ClipboardList,
   X,
-  Users,
   Monitor,
-  TrendingUp,
   ShieldCheck,
   HardDrive,
   LogOut
@@ -24,7 +23,6 @@ interface SidebarProps {
   onTabChange: (tab: string) => void;
   currentUser: TeacherUser;
   isSuperAdmin: boolean;
-  onOpenUserModal: () => void;
   onOpenAiModal: () => void;
   onLogout: () => void;
   isOpenMobile: boolean;
@@ -36,7 +34,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onTabChange,
   currentUser,
   isSuperAdmin,
-  onOpenUserModal,
   onOpenAiModal,
   onLogout,
   isOpenMobile,
@@ -45,7 +42,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const navItems = [
     { id: 'dashboard', label: '工作台总览', icon: LayoutDashboard },
     { id: 'journal', label: '教室教学日志', icon: BookOpenCheck },
-    { id: 'progress', label: '教学进度与学情', icon: TrendingUp },
+    { id: 'records', label: '资讯处事项记录', icon: ClipboardList },
     { id: 'resources', label: '教材·试卷·课件库', icon: BookMarked },
     { id: 'grades', label: '学生成绩与作业', icon: GraduationCap },
     { id: 'timetable', label: '电脑室周课表与维修', icon: Clock },
@@ -104,17 +101,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </button>
         </div>
 
-        {/* 当前登录教师后端卡片：职称统一为 IT老师 / 资讯处助理 */}
+        {/* 当前登录教师卡片 */}
         <div className="p-3.5 mx-3 my-3 bg-slate-800/80 rounded-xl border border-slate-700/60">
-          <div className="flex items-center justify-between text-xs mb-2">
+          <div className="text-xs mb-2">
             <span className="text-slate-400">当前教职员</span>
-            <button
-              onClick={onOpenUserModal}
-              className="text-xs text-sky-400 hover:text-sky-300 font-medium underline underline-offset-2 transition flex items-center gap-1"
-            >
-              <Users className="h-3 w-3" />
-              <span>切换老师</span>
-            </button>
           </div>
           <div className="flex items-center gap-2.5">
             <div className={`h-8 w-8 rounded-lg bg-gradient-to-tr ${currentUser.avatarColor} flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-sm`}>

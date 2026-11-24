@@ -6,10 +6,9 @@ interface HeaderProps {
   currentUser: TeacherUser;
   onOpenAi: () => void;
   onOpenMenu: () => void;
-  onOpenUserModal: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ currentUser, onOpenAi, onOpenMenu, onOpenUserModal }) => {
+export const Header: React.FC<HeaderProps> = ({ currentUser, onOpenAi, onOpenMenu }) => {
   const now = new Date();
   const weekdayNames = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
   const formattedDate = `${now.getMonth() + 1}月${now.getDate()}日 ${weekdayNames[now.getDay()]}`;
@@ -51,24 +50,20 @@ export const Header: React.FC<HeaderProps> = ({ currentUser, onOpenAi, onOpenMen
           <span className="xs:hidden">AI</span>
         </button>
 
-        {/* 用户切换入口 */}
-        <button
-          onClick={onOpenUserModal}
-          className="flex items-center gap-2 sm:pl-3 sm:border-l sm:border-slate-200 hover:opacity-85 transition text-left"
-        >
+        {/* 当前登录用户 */}
+        <div className="flex items-center gap-2 sm:pl-3 sm:border-l sm:border-slate-200 text-left">
           <div className={`h-8 w-8 rounded-full bg-gradient-to-tr ${currentUser.avatarColor} flex items-center justify-center text-white text-xs font-bold shadow-sm shrink-0`}>
             {currentUser.name.slice(0, 1)}
           </div>
           <div className="hidden sm:block text-left">
             <div className="text-xs font-bold text-slate-800 leading-tight flex items-center gap-1">
               <span>{currentUser.name}</span>
-              <span className="text-[10px] text-sky-600 bg-sky-50 px-1 rounded">切换</span>
             </div>
             <div className="text-[11px] text-slate-400 truncate max-w-[140px]">
               {currentUser.title}
             </div>
           </div>
-        </button>
+        </div>
       </div>
     </header>
   );

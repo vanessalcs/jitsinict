@@ -1,0 +1,24 @@
+{
+  "hosting": [
+    {
+      "site": "jsi-ict",
+      "public": "frontend/dist",
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+      "rewrites": [
+        {
+          "source": "/api-proxy",
+          "run": { "serviceId": "jitsinict-api", "region": "asia-southeast1" }
+        },
+        { "source": "**", "destination": "/index.html" }
+      ]
+    },
+    {
+      "site": "jit-sin-ai",
+      "public": "frontend/dist",
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+      "redirects": [
+        { "source": "/**", "destination": "https://jsi-ict.web.app", "type": 301 }
+      ]
+    }
+  ]
+}

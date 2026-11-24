@@ -8,8 +8,7 @@ import {
   TeacherUser,
   TeachingResource,
   TeachingJournalEntry,
-  LabMaintenanceTicket,
-  TeachingProgressRecord
+  LabMaintenanceTicket
 } from '../types';
 
 export const initialTeachers: TeacherUser[] = [
@@ -443,6 +442,3 @@ export const initialCalendarEvents: CalendarEvent[] = [
 ];
 
 export const initialAnnouncements: SchoolAnnouncement[] = [];
-
-// 教学进度初始记录
-export const initialTeachingProgress: TeachingProgressRecord[] = [];

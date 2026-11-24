@@ -29,24 +29,23 @@ export interface AuthorizedUser {
   allowedReports: string[];
 }
 
-// 教学进度记录
-export interface TeachingProgressRecord {
+// 资讯处事项档案记录（全年工作记录，所有成员共享）
+export type RecordStatus = 'none' | 'pending' | 'doing' | 'done';
+
+export interface DepartmentRecord {
   id: string;
-  subjectType: SchoolSubject;
-  courseName: string;
-  className: string;
-  unitName: string;
-  lessonNumber: number;
-  totalLessons: number;
-  currentStatus: 'in_progress' | 'completed' | 'pending';
-  lastTaughtDate: string; // YYYY-MM-DD
-  keyConcepts: string[];
-  studentMasteryRate: number; // 0 ~ 100
-  reflectionNotes: string;
-  teacherName: string;
+  date: string; // YYYY-MM-DD
+  content: string; // 记录事项
+  handlers: string; // 处理事项（谁负责处理）
+  recorderName: string; // 记录者
+  recorderEmail: string; // 记录者邮箱（小写；历史记录无法对应时为空）
+  status: RecordStatus;
+  tag: string; // 分类标签，例如「支付」，可为空
+  expiryDate: string; // 到期 / 续期日 YYYY-MM-DD，可为空
+  note: string; // 进度备注，可为空
 }
 
-export type ResourceType = 'textbook' | 'exam_paper' | 'powerpoint' | 'lab_project';
+export type ResourceType ='textbook' | 'exam_paper' | 'powerpoint' | 'lab_project';
 
 export interface TeachingResource {
   id: string;
