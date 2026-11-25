@@ -10,6 +10,9 @@ import {
   BookMarked,
   BookOpenCheck,
   ClipboardList,
+  Wallet,
+  ChevronDown,
+  ChevronRight,
   X,
   Monitor,
   ShieldCheck,
@@ -17,6 +20,7 @@ import {
   LogOut
 } from 'lucide-react';
 import { TeacherUser } from '../types';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 
 interface SidebarProps {
   currentTab: string;
@@ -44,27 +48,71 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   // 仅在 lg 及以上生效的「收起」样式
   const hideWhenCollapsed = collapsed ? 'lg:hidden' : '';
-  const navItems = [
-    { id: 'dashboard', label: '工作台总览', icon: LayoutDashboard },
-    { id: 'journal', label: '教室教学日志', icon: BookOpenCheck },
-    { id: 'records', label: '资讯处事项记录', icon: ClipboardList },
-    { id: 'resources', label: '教材·试卷·课件库', icon: BookMarked },
-    { id: 'grades', label: '学生成绩与作业', icon: GraduationCap },
-    { id: 'timetable', label: '电脑室周课表与维修', icon: Clock },
-    { id: 'documents', label: '公文与空白表单', icon: FileText },
-    { id: 'calendar', label: '2027年行事历', icon: CalendarDays },
-    { id: 'announcements', label: '校园通知公告', icon: BellRing },
+
+  // 已收起的分组（电脑科 / 资讯处），记住上次的选择
+  const [closedGroups, setClosedGroups] = useLocalStorage<string[]>('eduit_sidebar_closed_groups_v1', []);
+  const toggleGroup = (label: string) =>
+    setClosedGroups((prev) => (prev.includes(label) ? prev.filter((l) => l !== label) : [...prev, label]));
+  type NavItem = { id: string; label: string; icon: React.ComponentType<{ className?: string }> };
+  type NavEntry = { kind: 'item'; item: NavItem } | { kind: 'group'; label: string; items: NavItem[] };
+
+  const navEntries: NavEntry[] = [
+    { kind: 'item', item: { id: 'dashboard', label: '工作台总览', icon: LayoutDashboard } },
+    { kind: 'item', item: { id: 'calendar', label: '2027年行事历', icon: CalendarDays } },
+    { kind: 'item', item: { id: 'announcements', label: '校园通知公告', icon: BellRing } },
+    { kind: 'item', item: { id: 'timetable', label: '电脑室周课表与维修', icon: Clock } },
+    { kind: 'item', item: { id: 'documents', label: '公文与空白表单', icon: FileText } },
+    {
+      kind: 'group',
+      label: '电脑科',
+      items: [
+        { id: 'journal', label: '教室教学日志', icon: BookOpenCheck },
+        { id: 'resources', label: '教材·试卷·课件库', icon: BookMarked },
+        { id: 'grades', label: '学生成绩与作业', icon: GraduationCap },
+      ],
+    },
+    {
+      kind: 'group',
+      label: '资讯处',
+      items: [
+        { id: 'records', label: '资讯处事项记录', icon: ClipboardList },
+        { id: 'budget', label: '资讯处预算', icon: Wallet },
+      ],
+    },
     ...(isSuperAdmin
-      ? [
-          { id: 'files', label: '文件管理后台', icon: HardDrive },
-          { id: 'access', label: '成员权限管理', icon: ShieldCheck },
-        ]
+      ? ([
+          { kind: 'item', item: { id: 'files', label: '文件管理后台', icon: HardDrive } },
+          { kind: 'item', item: { id: 'access', label: '成员权限管理', icon: ShieldCheck } },
+        ] as NavEntry[])
       : []),
   ];
 
   const handleSelectTab = (id: string) => {
     onTabChange(id);
     onCloseMobile();
+  };
+
+  // topLevel：不属于任何分组的项目，用粗体与分组内的项目区分
+  const renderNavButton = (item: NavItem, topLevel = false) => {
+    const Icon = item.icon;
+    const isActive = currentTab === item.id;
+    return (
+      <button
+        key={item.id}
+        onClick={() => handleSelectTab(item.id)}
+        title={collapsed ? item.label : undefined}
+        className={`w-full flex items-center gap-3 px-3.5 py-2.5 sm:py-3 rounded-xl text-sm ${topLevel ? 'font-bold' : 'font-medium'} transition-all ${
+          collapsed ? 'lg:justify-center lg:px-0' : ''
+        } ${
+          isActive
+            ? 'bg-sky-600 text-white shadow-sm shadow-sky-600/30'
+            : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+        }`}
+      >
+        <Icon className={`h-5 w-5 shrink-0 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+        <span className={hideWhenCollapsed}>{item.label}</span>
+      </button>
+    );
   };
 
   return (
@@ -131,27 +179,36 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className={`px-3 pt-2 pb-1 text-xs font-semibold text-slate-400 tracking-wider uppercase ${hideWhenCollapsed}`}>
             功能菜单
           </div>
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = currentTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => handleSelectTab(item.id)}
-                title={collapsed ? item.label : undefined}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 sm:py-3 rounded-xl text-sm font-medium transition-all ${
-                  collapsed ? 'lg:justify-center lg:px-0' : ''
-                } ${
-                  isActive
-                    ? 'bg-sky-600 text-white shadow-sm shadow-sky-600/30'
-                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                }`}
-              >
-                <Icon className={`h-5 w-5 shrink-0 ${isActive ? 'text-white' : 'text-slate-400'}`} />
-                <span className={hideWhenCollapsed}>{item.label}</span>
-              </button>
-            );
-          })}
+          {navEntries.map((entry) =>
+            entry.kind === 'item' ? (
+              renderNavButton(entry.item, true)
+            ) : (
+              <div key={entry.label} className="pt-2 pb-1 space-y-1">
+                {/* 分组标题：带箭头，点击可收起/展开（图标栏模式下改为一条细分隔线） */}
+                <button
+                  onClick={() => toggleGroup(entry.label)}
+                  aria-expanded={!closedGroups.includes(entry.label)}
+                  className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-bold text-sky-400 tracking-wider hover:bg-slate-800 transition ${hideWhenCollapsed}`}
+                >
+                  <span>{entry.label}</span>
+                  {closedGroups.includes(entry.label) ? (
+                    <ChevronRight className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </button>
+                {collapsed && <div className="hidden lg:block mx-2 my-1 border-t border-slate-700" />}
+                {/* 收起时隐藏项目；图标栏模式下始终显示图标 */}
+                <div
+                  className={`space-y-1 ${
+                    closedGroups.includes(entry.label) ? (collapsed ? 'hidden lg:block' : 'hidden') : ''
+                  }`}
+                >
+                  {entry.items.map((it) => renderNavButton(it))}
+                </div>
+              </div>
+            )
+          )}
         </nav>
 
         {/* Gemini AI 助手调用按钮 */}

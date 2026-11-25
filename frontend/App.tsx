@@ -28,6 +28,7 @@ import { Header } from './components/Header';
 import { Dashboard } from './components/Dashboard';
 import { TeachingJournal } from './components/TeachingJournal';
 import { DepartmentRecords } from './components/DepartmentRecords';
+import { BudgetPage } from './components/BudgetPage';
 import { ResourceHub } from './components/ResourceHub';
 import { GradeManager } from './components/GradeManager';
 import { Timetable } from './components/Timetable';
@@ -209,6 +210,8 @@ export const App: React.FC<AppProps> = ({ authUser, onLogout, onRefreshAuthUser 
           )}
 
           {currentTab === 'records' && <DepartmentRecords authUser={authUser} />}
+
+          {currentTab === 'budget' && <BudgetPage />}
 
           {currentTab === 'files' && authUser.isSuperAdmin && <FileManager />}
 
