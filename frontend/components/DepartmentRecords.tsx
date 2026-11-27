@@ -2,6 +2,10 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { AlarmClock, ClipboardList, FileDown, FileSpreadsheet, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
 import { AuthorizedUser, DepartmentRecord, RecordStatus } from '../types';
 import { notify } from '../utils/toast';
+import { initialTeachers } from '../data/initialData';
+
+// 「谁负责处理」下拉选项：全部老师（不含资讯处公共账号）
+const HANDLER_OPTIONS = initialTeachers.filter((t) => t.id !== 'u_ict').map((t) => t.name);
 import {
   DepartmentRecordInput,
   addDepartmentRecord,
@@ -454,7 +458,13 @@ export const DepartmentRecords: React.FC<DepartmentRecordsProps> = ({ authUser }
 
             <label className="block text-xs font-medium text-slate-600">
               处理事项（谁负责处理）
-              <input type="text" value={form.handlers} onChange={(e) => setForm({ ...form, handlers: e.target.value })} placeholder="例如：慈贤、世泓" className="mt-1 w-full px-3 py-1.5 text-sm bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-sky-500" />
+              <select value={form.handlers} onChange={(e) => setForm({ ...form, handlers: e.target.value })} className="mt-1 w-full px-3 py-1.5 text-sm bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-sky-500">
+                <option value="">请选择负责老师</option>
+                {form.handlers && !HANDLER_OPTIONS.includes(form.handlers) && <option value={form.handlers}>{form.handlers}（原有记录）</option>}
+                {HANDLER_OPTIONS.map((n) => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
             </label>
 
             <div className="grid grid-cols-2 gap-3">

@@ -89,7 +89,7 @@ export const App: React.FC<AppProps> = ({ authUser, onLogout, onRefreshAuthUser 
   const [homeworkList, setHomeworkList] = useLocalStorage<HomeworkSubmission[]>('eduit_homework_v5', initialHomework);
   const [timetable, setTimetable] = useLocalStorage<TimetableSlot[]>('eduit_timetable_v5', initialTimetable);
   const [documents, setDocuments] = useLocalStorage<SchoolDocument[]>('eduit_documents_v5', initialDocuments);
-  const [calendarEvents, setCalendarEvents] = useLocalStorage<CalendarEvent[]>('eduit_calendar_v5', initialCalendarEvents);
+  const [calendarEvents, setCalendarEvents] = useLocalStorage<CalendarEvent[]>('eduit_calendar_v6', initialCalendarEvents);
   const [announcements, setAnnouncements] = useLocalStorage<SchoolAnnouncement[]>('eduit_announcements_v5', initialAnnouncements);
 
   // 抽屉与弹窗状态

@@ -38,15 +38,15 @@ export const SchoolCalendar: React.FC<SchoolCalendarProps> = ({ events, onAddEve
 
   // 2027 年官方上课天数对应表 (全学年总计 195 天，严格根据图表核实)
   const schoolTeachingDays: Record<number, number> = {
-    0: 16, // 1月: 16天
+    0: 18, // 1月: 18天
     1: 13, // 2月: 13天
     2: 18, // 3月: 18天
     3: 21, // 4月: 21天
     4: 10, // 5月: 10天
     5: 16, // 6月: 16天
-    6: 21, // 7月: 21天
+    6: 20, // 7月: 20天
     7: 19, // 8月: 19天
-    8: 18, // 9月: 18天
+    8: 17, // 9月: 17天
     9: 18, // 10月: 18天
     10: 22, // 11月: 22天
     11: 3, // 12月: 3天
@@ -139,13 +139,13 @@ export const SchoolCalendar: React.FC<SchoolCalendarProps> = ({ events, onAddEve
           <div className="flex items-center gap-2 flex-wrap">
             <h2 className="text-lg sm:text-xl font-bold text-slate-900 flex items-center gap-2">
               <CalendarDays className="h-5 w-5 sm:h-6 sm:w-6 text-sky-600" />
-              <span>2027年行事历 (未定稿)</span>
+              <span>2027年行事历 (第6版)</span>
             </h2>
             <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-800 font-bold border border-sky-200 font-mono">
               上课日数: 195天
             </span>
             <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-medium border border-slate-200">
-              更新日期：14.10.2026
+              更新日期：25.11.2026
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -225,19 +225,19 @@ export const SchoolCalendar: React.FC<SchoolCalendarProps> = ({ events, onAddEve
             onClick={() => { setCurrentYear(2027); setCurrentMonth(2); }}
             className={`px-2.5 py-1 rounded-lg transition text-xs ${currentMonth === 2 ? 'bg-sky-600 text-white font-bold shadow' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'}`}
           >
-            3月：第一期考及作业抽查 (15/3 - 26/3)
+            3月：第一期考及作业抽查 (18/3 - 24/3)
           </button>
           <button 
             onClick={() => { setCurrentYear(2027); setCurrentMonth(3); }}
             className={`px-2.5 py-1 rounded-lg transition text-xs ${currentMonth === 3 ? 'bg-sky-600 text-white font-bold shadow' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'}`}
           >
-            4月：观课周 / 黄花艺术季 / 家长日 (25/4)
+            4月：观课周 (6/4 - 16/4) / 黄花艺术季 / 家长日 (25/4)
           </button>
           <button 
             onClick={() => { setCurrentYear(2027); setCurrentMonth(4); }}
             className={`px-2.5 py-1 rounded-lg transition text-xs ${currentMonth === 4 ? 'bg-sky-600 text-white font-bold shadow' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'}`}
           >
-            5月：传灯独中情 / 年中假期 (22/5 - 6/6)
+            5月：独中基金会20周年庆 / 年中假期 (22/5 - 6/6)
           </button>
           <button 
             onClick={() => { setCurrentYear(2027); setCurrentMonth(5); }}
@@ -255,7 +255,7 @@ export const SchoolCalendar: React.FC<SchoolCalendarProps> = ({ events, onAddEve
             onClick={() => { setCurrentYear(2027); setCurrentMonth(8); }}
             className={`px-2.5 py-1 rounded-lg transition text-xs ${currentMonth === 8 ? 'bg-sky-600 text-white font-bold shadow' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'}`}
           >
-            9月：J3/S3 毕业考 / 第三期考及抽查 (20/9 - 1/10)
+            9月：J3/S3 毕业考 (13/9 - 22/9) / 第三期考及抽查 (21/9 - 30/9)
           </button>
           <button 
             onClick={() => { setCurrentYear(2027); setCurrentMonth(9); }}
@@ -267,7 +267,7 @@ export const SchoolCalendar: React.FC<SchoolCalendarProps> = ({ events, onAddEve
             onClick={() => { setCurrentYear(2027); setCurrentMonth(10); }}
             className={`px-2.5 py-1 rounded-lg transition text-xs ${currentMonth === 10 ? 'bg-sky-600 text-white font-bold shadow' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'}`}
           >
-            11月：田径赛/诗展 / 毕业典礼 (20/11) / 休业式 (26/11)
+            11月：田径锦标赛 / 毕业典礼 (20/11) / 休业仪式 (26/11)
           </button>
           <button 
             onClick={() => { setCurrentYear(2027); setCurrentMonth(11); }}

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Wallet, Info, TrendingDown, PiggyBank, Receipt, ChevronDown, ChevronRight, Plus, Trash2 } from 'lucide-react';
+import { Wallet, Info, TrendingDown, PiggyBank, Receipt, ChevronDown, ChevronRight, Plus, Trash2, FilePlus2 } from 'lucide-react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { BUDGET_CATEGORIES, BUDGET_YEAR } from '../data/budget2027';
 
@@ -8,6 +8,16 @@ interface Purchase {
   id: string;
   at: string; // 本地日期时间 YYYY-MM-DDTHH:mm
   desc: string; // 购买内容说明
+  qty: string;
+  price: string;
+}
+
+// 预算外追加的一笔支出（不属于原有子类别），挂在所选类别下。
+interface Extra {
+  id: string;
+  code: number; // 所属类别编号
+  at: string;
+  name: string;
   qty: string;
   price: string;
 }
@@ -38,6 +48,21 @@ export const BudgetPage: React.FC = () => {
     'eduit_budget_purchases_2027_v1',
     {}
   );
+  const [extras, setExtras] = useLocalStorage<Extra[]>('eduit_budget_extras_2027_v1', []);
+  const [showForm, setShowForm] = useState(false);
+  const emptyForm = { code: String(BUDGET_CATEGORIES[0]?.code ?? ''), at: nowLocal(), name: '', qty: '1', price: '' };
+  const [form, setForm] = useState(emptyForm);
+  const formTotal = Math.round(num(form.qty) * num(form.price) * 100) / 100;
+
+  const submitExtra = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.name.trim()) return;
+    setExtras((prev) => [...prev, { id: crypto.randomUUID(), code: Number(form.code), at: form.at, name: form.name.trim(), qty: form.qty, price: form.price }]);
+    setForm({ ...emptyForm, code: form.code, at: nowLocal() });
+    setShowForm(false);
+  };
+  const removeExtra = (id: string) => setExtras((prev) => prev.filter((x) => x.id !== id));
+
   const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
 
   const rows = useMemo(
@@ -49,11 +74,15 @@ export const BudgetPage: React.FC = () => {
           const actual = list.reduce((s, p) => s + purchaseTotal(p), 0);
           return { ...it, list, budget, actual, remaining: budget - actual };
         });
-        const actual = items.reduce((s, it) => s + it.actual, 0);
-        const count = items.reduce((s, it) => s + it.list.length, 0);
-        return { ...c, items, actual, count, remaining: c.budget - actual };
+        const extraList = extras
+          .filter((x) => x.code === c.code)
+          .map((x) => ({ ...x, total: Math.round(num(x.qty) * num(x.price) * 100) / 100 }));
+        const actual =
+          items.reduce((s, it) => s + it.actual, 0) + extraList.reduce((s, x) => s + x.total, 0);
+        const count = items.reduce((s, it) => s + it.list.length, 0) + extraList.length;
+        return { ...c, items, extraList, actual, count, remaining: c.budget - actual };
       }),
-    [purchases]
+    [purchases, extras]
   );
 
   const totalBudget = rows.reduce((s, r) => s + r.budget, 0);
@@ -106,6 +135,58 @@ export const BudgetPage: React.FC = () => {
         <p className="text-xs text-slate-500 mt-0.5">
           在每个子类别下点「添加」登记实际购买，子类别、类别的实际支出与剩余会自动计算（单位：RM）
         </p>
+      </div>
+
+      <div className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            <div className="font-bold text-sm text-slate-900">预算追加</div>
+            <div className="text-xs text-slate-500">预算以外的支出，可选择归入哪个类别，会计入该类别的实际支出</div>
+          </div>
+          <button
+            onClick={() => setShowForm((v) => !v)}
+            className="inline-flex items-center gap-1 px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-xs font-semibold shadow-sm transition shrink-0"
+          >
+            <FilePlus2 className="h-4 w-4" />
+            <span>{showForm ? '收起' : '预算追加'}</span>
+          </button>
+        </div>
+        {showForm && (
+          <form onSubmit={submitExtra} className="grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
+            <label className="md:col-span-2 text-xs text-slate-600">
+              所属类别
+              <select value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} className={`${inputCls} mt-1`}>
+                {BUDGET_CATEGORIES.map((c) => (
+                  <option key={c.code} value={c.code}>{c.code}. {c.zh}</option>
+                ))}
+              </select>
+            </label>
+            <label className="md:col-span-2 text-xs text-slate-600">
+              项目名称 / 购买内容
+              <input required type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="例如：额外购买的投影机灯泡" className={`${inputCls} mt-1`} />
+            </label>
+            <label className="md:col-span-2 text-xs text-slate-600">
+              日期与时间
+              <input type="datetime-local" value={form.at} onChange={(e) => setForm({ ...form, at: e.target.value })} className={`${inputCls} mt-1`} />
+            </label>
+            <label className="text-xs text-slate-600">
+              数量
+              <input type="number" inputMode="decimal" min="0" step="any" value={form.qty} onChange={(e) => setForm({ ...form, qty: e.target.value })} className={`${inputCls} mt-1 text-right tabular-nums`} />
+            </label>
+            <label className="text-xs text-slate-600">
+              单价 (RM)
+              <input type="number" inputMode="decimal" min="0" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} placeholder="0.00" className={`${inputCls} mt-1 text-right tabular-nums`} />
+            </label>
+            <div className="text-xs text-slate-600">
+              金额 (RM)
+              <div className="mt-1 p-1.5 font-bold tabular-nums text-right text-slate-900">{money(formTotal)}</div>
+            </div>
+            <div className="md:col-span-3 flex justify-end gap-2">
+              <button type="button" onClick={() => setShowForm(false)} className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg">取消</button>
+              <button type="submit" className="px-4 py-1.5 text-xs font-semibold bg-violet-600 hover:bg-violet-700 text-white rounded-lg">加入清单</button>
+            </div>
+          </form>
+        )}
       </div>
 
       <div className="p-3.5 bg-amber-50 rounded-2xl border border-amber-200 flex items-start gap-3 text-xs text-amber-900">
@@ -169,7 +250,7 @@ export const BudgetPage: React.FC = () => {
                       {r.zh}
                     </div>
                     <div className="text-[11px] text-slate-400 truncate">
-                      {r.en} · {r.items.length} 个子类别 · {r.count} 笔购买
+                      {r.en} · {r.items.length} 个子类别 · {r.count} 笔购买{r.extraList.length > 0 ? ` · 含 ${r.extraList.length} 笔预算追加` : ''}
                     </div>
                   </div>
                 </div>
@@ -327,6 +408,25 @@ export const BudgetPage: React.FC = () => {
                               </tr>
                             )}
                           </React.Fragment>
+                        ))}
+                        {r.extraList.map((x) => (
+                          <tr key={x.id} className="border-t border-slate-200 bg-violet-50/60">
+                            <td className="py-2 pr-2 font-semibold text-slate-900">
+                              <span className="inline-block mr-1.5 px-1.5 py-0.5 rounded bg-violet-600 text-white text-[10px] font-bold align-middle">预算追加</span>
+                              {x.name}
+                              <div className="text-[10px] font-normal text-slate-400">{x.at.replace('T', ' ')}</div>
+                            </td>
+                            <td className="py-2 pr-2 text-right tabular-nums text-slate-500">{money(num(x.price))}</td>
+                            <td className="py-2 pr-2 text-right tabular-nums text-slate-500">{x.qty}</td>
+                            <td className="py-2 pr-2 text-right tabular-nums text-slate-400">—</td>
+                            <td className="py-2 pr-2 text-right tabular-nums font-semibold">{money(x.total)}</td>
+                            <td className="py-2 pr-2 text-right tabular-nums font-semibold text-rose-600">{money(-x.total)}</td>
+                            <td className="py-2 text-right">
+                              <button onClick={() => removeExtra(x.id)} className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition" title="删除这笔追加">
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </td>
+                          </tr>
                         ))}
                       </tbody>
                       <tfoot>
