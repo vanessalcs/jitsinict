@@ -88,6 +88,28 @@ service cloud.firestore {
         && (resource.data.recorderEmail == request.auth.token.email.lower() || isSuperAdmin());
     }
 
+    // 资讯处预算：成员可读/新增（登记者必须是本人）；登记者本人或超级管理员可修改、删除
+    match /budget_purchases/{id} {
+      allow read: if isActiveMember();
+      allow create: if isActiveMember()
+        && request.resource.data.createdByEmail == request.auth.token.email.lower()
+        && request.resource.data.itemId is string;
+      allow update: if isActiveMember()
+        && (resource.data.createdByEmail == request.auth.token.email.lower() || isSuperAdmin())
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['at', 'desc', 'qty', 'price']);
+      allow delete: if isActiveMember()
+        && (resource.data.createdByEmail == request.auth.token.email.lower() || isSuperAdmin());
+    }
+
+    match /budget_extras/{id} {
+      allow read: if isActiveMember();
+      allow create: if isActiveMember()
+        && request.resource.data.createdByEmail == request.auth.token.email.lower()
+        && request.resource.data.code is number;
+      allow delete: if isActiveMember()
+        && (resource.data.createdByEmail == request.auth.token.email.lower() || isSuperAdmin());
+    }
+
     // 成员名单：本人可读取自己的档案，超级管理员可读取/维护全部
     match /authorized_users/{email} {
       allow get: if signedIn() && (request.auth.token.email.lower() == email || isSuperAdmin());

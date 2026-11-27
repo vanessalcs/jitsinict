@@ -1,7 +1,20 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Wallet, Info, TrendingDown, PiggyBank, Receipt, ChevronDown, ChevronRight, Plus, Trash2, FilePlus2 } from 'lucide-react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { BUDGET_CATEGORIES, BUDGET_YEAR } from '../data/budget2027';
+import { AuthorizedUser } from '../types';
+import { notify } from '../utils/toast';
+import {
+  BudgetExtraDoc,
+  BudgetPurchaseDoc,
+  addBudgetExtra,
+  addBudgetPurchase,
+  deleteBudgetExtra,
+  deleteBudgetPurchase,
+  subscribeBudgetExtras,
+  subscribeBudgetPurchases,
+  updateBudgetPurchase,
+} from '../services/budgetRecords';
 
 // 子类别下的一笔实际购买。数量、单价用字符串保存，避免输入小数点时被截断。
 interface Purchase {
@@ -10,6 +23,8 @@ interface Purchase {
   desc: string; // 购买内容说明
   qty: string;
   price: string;
+  createdByName?: string;
+  createdByEmail?: string;
 }
 
 // 预算外追加的一笔支出（不属于原有子类别），挂在所选类别下。
@@ -42,13 +57,54 @@ const nowLocal = () => {
 const inputCls =
   'w-full p-1.5 border border-slate-200 rounded-lg bg-white text-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500';
 
-export const BudgetPage: React.FC = () => {
-  // 预览版：购买记录暂存在本浏览器（key = 子类别编号）
-  const [purchases, setPurchases] = useLocalStorage<Record<string, Purchase[]>>(
-    'eduit_budget_purchases_2027_v1',
-    {}
-  );
-  const [extras, setExtras] = useLocalStorage<Extra[]>('eduit_budget_extras_2027_v1', []);
+export const BudgetPage: React.FC<{ authUser: AuthorizedUser }> = ({ authUser }) => {
+  const me = { name: authUser.name, email: authUser.email };
+  const myEmail = authUser.email.toLowerCase();
+  const canEdit = (createdByEmail?: string) => authUser.isSuperAdmin || createdByEmail === myEmail;
+
+  // 全处共享：实时订阅 Firestore
+  const [serverPurchases, setServerPurchases] = useState<BudgetPurchaseDoc[]>([]);
+  const [extras, setExtras] = useState<BudgetExtraDoc[]>([]);
+  const [drafts, setDrafts] = useState<Record<string, Partial<Purchase>>>({});
+  const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+
+  useEffect(() => {
+    const onErr = (e: Error) => notify(`读取预算数据失败：${e.message}`);
+    const u1 = subscribeBudgetPurchases(setServerPurchases, onErr);
+    const u2 = subscribeBudgetExtras(setExtras, onErr);
+    return () => {
+      u1();
+      u2();
+    };
+  }, []);
+
+  // 服务器数据叠加正在输入的草稿，按子类别分组
+  const purchases = useMemo(() => {
+    const map: Record<string, Purchase[]> = {};
+    for (const p of serverPurchases) {
+      (map[p.itemId] ??= []).push({ ...p, ...(drafts[p.id] ?? {}) });
+    }
+    return map;
+  }, [serverPurchases, drafts]);
+
+  // 旧版暂存在本浏览器的记录：可一次性导入共享数据
+  const [oldPurchases, setOldPurchases] = useLocalStorage<Record<string, Purchase[]>>('eduit_budget_purchases_2027_v1', {});
+  const [oldExtras, setOldExtras] = useLocalStorage<Extra[]>('eduit_budget_extras_2027_v1', []);
+  const oldCount = Object.values(oldPurchases).reduce((n, l) => n + l.length, 0) + oldExtras.length;
+  const importOld = async () => {
+    try {
+      for (const [itemId, list] of Object.entries(oldPurchases)) {
+        for (const p of list) await addBudgetPurchase({ itemId, at: p.at, desc: p.desc, qty: p.qty, price: p.price }, me);
+      }
+      for (const x of oldExtras) await addBudgetExtra({ code: x.code, at: x.at, name: x.name, qty: x.qty, price: x.price }, me);
+      setOldPurchases({});
+      setOldExtras([]);
+      notify('已把本机旧记录导入共享预算');
+    } catch (e) {
+      notify(`导入失败：${(e as Error).message}`);
+    }
+  };
+
   const [showForm, setShowForm] = useState(false);
   const emptyForm = { code: String(BUDGET_CATEGORIES[0]?.code ?? ''), at: nowLocal(), name: '', qty: '1', price: '' };
   const [form, setForm] = useState(emptyForm);
@@ -57,11 +113,13 @@ export const BudgetPage: React.FC = () => {
   const submitExtra = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim()) return;
-    setExtras((prev) => [...prev, { id: crypto.randomUUID(), code: Number(form.code), at: form.at, name: form.name.trim(), qty: form.qty, price: form.price }]);
+    addBudgetExtra({ code: Number(form.code), at: form.at, name: form.name.trim(), qty: form.qty, price: form.price }, me).catch((err) =>
+      notify(`保存失败：${err.message}`)
+    );
     setForm({ ...emptyForm, code: form.code, at: nowLocal() });
     setShowForm(false);
   };
-  const removeExtra = (id: string) => setExtras((prev) => prev.filter((x) => x.id !== id));
+  const removeExtra = (id: string) => deleteBudgetExtra(id).catch((err) => notify(`删除失败：${err.message}`));
 
   const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
 
@@ -100,19 +158,41 @@ export const BudgetPage: React.FC = () => {
 
   // 新增一笔购买：日期时间默认记下当下，之后可修改。
   const addPurchase = (itemId: string) =>
-    setPurchases((prev) => ({
-      ...prev,
-      [itemId]: [...(prev[itemId] ?? []), { id: crypto.randomUUID(), at: nowLocal(), desc: '', qty: '1', price: '' }],
-    }));
+    addBudgetPurchase({ itemId, at: nowLocal(), desc: '', qty: '1', price: '' }, me).catch((err) =>
+      notify(`保存失败：${err.message}`)
+    );
 
-  const updatePurchase = (itemId: string, id: string, patch: Partial<Purchase>) =>
-    setPurchases((prev) => ({
-      ...prev,
-      [itemId]: (prev[itemId] ?? []).map((p) => (p.id === id ? { ...p, ...patch } : p)),
-    }));
+  // 输入时先更新草稿（界面立即反应），停顿 0.6 秒后再写入共享数据
+  const updatePurchase = (_itemId: string, id: string, patch: Partial<Purchase>) => {
+    setDrafts((prev) => ({ ...prev, [id]: { ...(prev[id] ?? {}), ...patch } }));
+    clearTimeout(timers.current[id]);
+    timers.current[id] = setTimeout(() => flushDraft(id), 600);
+  };
 
-  const removePurchase = (itemId: string, id: string) =>
-    setPurchases((prev) => ({ ...prev, [itemId]: (prev[itemId] ?? []).filter((p) => p.id !== id) }));
+  const draftsRef = useRef(drafts);
+  draftsRef.current = drafts;
+  const flushDraft = (id: string) => {
+    const draft = draftsRef.current[id];
+    if (!draft) return;
+    const { at, desc, qty, price } = draft;
+    updateBudgetPurchase(id, {
+      ...(at !== undefined && { at }),
+      ...(desc !== undefined && { desc }),
+      ...(qty !== undefined && { qty }),
+      ...(price !== undefined && { price }),
+    })
+      .then(() =>
+        setDrafts((cur) => {
+          if (cur[id] !== draft) return cur; // 写入期间又有新输入，保留
+          const { [id]: _done, ...rest } = cur;
+          return rest;
+        })
+      )
+      .catch((err) => notify(`保存失败：${err.message}`));
+  };
+
+  const removePurchase = (_itemId: string, id: string) =>
+    deleteBudgetPurchase(id).catch((err) => notify(`删除失败：${err.message}`));
 
   const summary = [
     { label: '总预算', value: totalBudget, icon: PiggyBank, tone: 'text-sky-700 bg-sky-50 border-sky-100' },
@@ -133,7 +213,7 @@ export const BudgetPage: React.FC = () => {
           <span>{BUDGET_YEAR} 年资讯处预算</span>
         </h2>
         <p className="text-xs text-slate-500 mt-0.5">
-          在每个子类别下点「添加」登记实际购买，子类别、类别的实际支出与剩余会自动计算（单位：RM）
+          在每个子类别下点「添加」登记实际购买，子类别、类别的实际支出与剩余会自动计算（单位：RM）。所有老师共用同一份记录
         </p>
       </div>
 
@@ -189,10 +269,15 @@ export const BudgetPage: React.FC = () => {
         )}
       </div>
 
-      <div className="p-3.5 bg-amber-50 rounded-2xl border border-amber-200 flex items-start gap-3 text-xs text-amber-900">
+      <div className="p-3.5 bg-sky-50 rounded-2xl border border-sky-200 flex items-start gap-3 text-xs text-sky-900">
         <Info className="h-4 w-4 shrink-0 mt-0.5" />
         <div className="leading-relaxed">
-          <b>预览版：</b>预算与子类别取自「2027 BUDGET 资讯处.xlsx」，只列出有预算的类别。登记的购买记录目前只暂存在本浏览器里，其他老师看不到，也不会同步。确认版面后再改成全处共享。
+          预算与子类别取自「2027 BUDGET 资讯处.xlsx」，只列出有预算的类别。登记的购买记录与预算追加已<b>全处共享</b>，所有老师实时看到同一份；只有登记者本人或超级管理员可以修改、删除。
+          {oldCount > 0 && (
+            <button onClick={importOld} className="ml-2 px-2 py-0.5 rounded-lg bg-sky-600 text-white font-semibold hover:bg-sky-700">
+              导入本机旧记录（{oldCount} 笔）
+            </button>
+          )}
         </div>
       </div>
 
@@ -351,6 +436,7 @@ export const BudgetPage: React.FC = () => {
                                               <input
                                                 type="datetime-local"
                                                 value={p.at}
+                                                disabled={!canEdit(p.createdByEmail)}
                                                 onChange={(e) => updatePurchase(it.id, p.id, { at: e.target.value })}
                                                 className={inputCls}
                                               />
@@ -359,8 +445,9 @@ export const BudgetPage: React.FC = () => {
                                               <input
                                                 type="text"
                                                 value={p.desc}
+                                                disabled={!canEdit(p.createdByEmail)}
                                                 onChange={(e) => updatePurchase(it.id, p.id, { desc: e.target.value })}
-                                                placeholder="买了什么、型号或供应商"
+                                                placeholder={p.createdByName ? `登记：${p.createdByName}` : '买了什么、型号或供应商'}
                                                 className={inputCls}
                                               />
                                             </td>
@@ -371,6 +458,7 @@ export const BudgetPage: React.FC = () => {
                                                 min="0"
                                                 step="any"
                                                 value={p.qty}
+                                                disabled={!canEdit(p.createdByEmail)}
                                                 onChange={(e) => updatePurchase(it.id, p.id, { qty: e.target.value })}
                                                 className={`${inputCls} text-right tabular-nums`}
                                               />
@@ -382,6 +470,7 @@ export const BudgetPage: React.FC = () => {
                                                 min="0"
                                                 step="0.01"
                                                 value={p.price}
+                                                disabled={!canEdit(p.createdByEmail)}
                                                 onChange={(e) => updatePurchase(it.id, p.id, { price: e.target.value })}
                                                 placeholder="0.00"
                                                 className={`${inputCls} text-right tabular-nums`}
@@ -391,13 +480,15 @@ export const BudgetPage: React.FC = () => {
                                               {money(purchaseTotal(p))}
                                             </td>
                                             <td className="py-1 text-right">
-                                              <button
-                                                onClick={() => removePurchase(it.id, p.id)}
-                                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
-                                                title="删除这笔购买"
-                                              >
-                                                <Trash2 className="h-3.5 w-3.5" />
-                                              </button>
+                                              {canEdit(p.createdByEmail) && (
+                                                <button
+                                                  onClick={() => removePurchase(it.id, p.id)}
+                                                  className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                                                  title="删除这笔购买"
+                                                >
+                                                  <Trash2 className="h-3.5 w-3.5" />
+                                                </button>
+                                              )}
                                             </td>
                                           </tr>
                                         ))}
@@ -414,7 +505,7 @@ export const BudgetPage: React.FC = () => {
                             <td className="py-2 pr-2 font-semibold text-slate-900">
                               <span className="inline-block mr-1.5 px-1.5 py-0.5 rounded bg-violet-600 text-white text-[10px] font-bold align-middle">预算追加</span>
                               {x.name}
-                              <div className="text-[10px] font-normal text-slate-400">{x.at.replace('T', ' ')}</div>
+                              <div className="text-[10px] font-normal text-slate-400">{x.at.replace('T', ' ')}{x.createdByName ? ` · 登记：${x.createdByName}` : ''}</div>
                             </td>
                             <td className="py-2 pr-2 text-right tabular-nums text-slate-500">{money(num(x.price))}</td>
                             <td className="py-2 pr-2 text-right tabular-nums text-slate-500">{x.qty}</td>
@@ -422,9 +513,11 @@ export const BudgetPage: React.FC = () => {
                             <td className="py-2 pr-2 text-right tabular-nums font-semibold">{money(x.total)}</td>
                             <td className="py-2 pr-2 text-right tabular-nums font-semibold text-rose-600">{money(-x.total)}</td>
                             <td className="py-2 text-right">
-                              <button onClick={() => removeExtra(x.id)} className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition" title="删除这笔追加">
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </button>
+                              {canEdit(x.createdByEmail) && (
+                                <button onClick={() => removeExtra(x.id)} className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition" title="删除这笔追加">
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              )}
                             </td>
                           </tr>
                         ))}

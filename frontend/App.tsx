@@ -211,7 +211,7 @@ export const App: React.FC<AppProps> = ({ authUser, onLogout, onRefreshAuthUser 
 
           {currentTab === 'records' && <DepartmentRecords authUser={authUser} />}
 
-          {currentTab === 'budget' && <BudgetPage />}
+          {currentTab === 'budget' && <BudgetPage authUser={authUser} />}
 
           {currentTab === 'files' && authUser.isSuperAdmin && <FileManager />}
 
